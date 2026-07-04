@@ -1,0 +1,17 @@
+# --- Web y datos (imprescindibles para el modo demo) ---
+streamlit>=1.36
+pandas>=2.0
+python-dotenv>=1.0
+
+# --- Base de datos en la nube (opcional: solo si usas Supabase) ---
+supabase>=2.4
+
+# --- Notificaciones (opcionales: solo en modo real) ---
+sendgrid>=6.11
+twilio>=9.0
+
+# --- HTTP (usado por el proveedor Duffel via REST) ---
+requests>=2.31
+
+# --- Proveedor Amadeus (opcional: descomenta si lo usas) ---
+# amadeus>=9.0

@@ -1,0 +1,14 @@
+# Tema visual institucional de la web.
+# Colores: navy #0D2A5A (primario), rojo #C0392B (acento).
+[theme]
+primaryColor = "#C0392B"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F2F5FA"
+textColor = "#0D2A5A"
+font = "sans serif"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false

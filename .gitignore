@@ -1,0 +1,23 @@
+# --- Secretos: NUNCA subir ---
+.env
+.streamlit/secrets.toml
+
+# --- Datos locales del modo demo (CSV) ---
+data/*.csv
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# --- Sistema / editores ---
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# --- Herramientas locales ---
+.claude/
