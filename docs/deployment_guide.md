@@ -75,3 +75,28 @@ la pestana **Actions → check-prices → Run workflow**.
 Tu URL de Streamlit (`https://<tu-app>.streamlit.app`) ya es publica y responsive.
 Compartela por correo, WhatsApp o QR. Cualquier persona puede crear una alerta
 desde el celular o el computador sin instalar nada.
+
+## 8. Branding somosrata
+
+1. **Logo**: sube el archivo del logo al repo en la ruta `assets/somosrata-logo.png`.
+   Streamlit lo toma automaticamente desde ahi (cabecera de la web y favicon). Si
+   el archivo no existe todavia, la app sigue funcionando igual, solo sin logo
+   (usa un emoji como respaldo).
+2. **Logo en email y WhatsApp**: SendGrid y Twilio necesitan una **URL publica**
+   del logo (no un archivo local) para poder mostrarlo. Sube la imagen a algun
+   hosting publico (por ejemplo, el propio repo de GitHub via "raw.githubusercontent.com",
+   un bucket publico, o cualquier CDN) y define esa URL como la variable
+   `BRAND_LOGO_URL` (en Streamlit Secrets y en GitHub Actions Secrets). Si no la
+   defines, el email se manda igual sin logo, y el WhatsApp se manda solo con
+   texto (sin imagen adjunta) — nunca se rompe el envio.
+3. **Colores**: los colores de marca tienen defaults ya aplicados (turquesa,
+   azul oscuro, coral, amarillo). Se pueden sobreescribir con
+   `BRAND_PRIMARY_COLOR`, `BRAND_SECONDARY_COLOR`, `BRAND_ACCENT_COLOR` y
+   `BRAND_YELLOW` si mas adelante cambia la paleta.
+4. **Limitacion del Sandbox de Twilio**: mientras uses el Sandbox, el remitente
+   de WhatsApp siempre se ve como "Twilio Sandbox" (no se puede personalizar
+   nombre ni foto de perfil), y cada destinatario debe escribir `join <palabra>`
+   antes de poder recibir mensajes. Para que **cualquier usuario** reciba
+   WhatsApp con el remitente "somosrata" (nombre, foto, sin el paso de "join"),
+   hay que migrar a un numero de **WhatsApp Business API aprobado por Meta**
+   (proceso de verificacion de negocio, toma dias y tiene costo asociado).

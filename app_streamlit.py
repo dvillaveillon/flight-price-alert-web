@@ -19,6 +19,7 @@ from datetime import date, timedelta
 
 import streamlit as st
 
+from src.branding import BRAND_NAME, BRAND_SLOGAN, get_colors, get_logo_local_path
 from src.database import Database
 from src.utils import (
     dates_are_coherent,
@@ -27,27 +28,30 @@ from src.utils import (
     normalize_iata,
 )
 
+colors = get_colors()
+logo_path = get_logo_local_path()
+
 # --------------------------------------------------------------------------- #
 # Configuracion de pagina
 # --------------------------------------------------------------------------- #
 st.set_page_config(
-    page_title="Flight Price Alert Web",
-    page_icon="✈️",
+    page_title=BRAND_NAME,
+    page_icon=logo_path or "🐭",
     layout="centered",
     initial_sidebar_state="collapsed",
 )
 
 # Estilos puntuales complementarios al tema de config.toml.
 st.markdown(
-    """
+    f"""
     <style>
-      .hero-title { font-size: 2.1rem; font-weight: 700; color: #0D2A5A;
-                    margin-bottom: 0.2rem; }
-      .hero-sub   { font-size: 1.05rem; color: #444; margin-bottom: 1.2rem; }
-      .badge      { display: inline-block; background: #0D2A5A; color: #fff;
-                    padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }
-      .ok-box     { border-left: 5px solid #C0392B; padding: 12px 16px;
-                    background: #f7f9fc; border-radius: 6px; }
+      .hero-title {{ font-size: 1.7rem; font-weight: 700; color: {colors['secondary']};
+                    margin-bottom: 0.2rem; }}
+      .hero-sub   {{ font-size: 1.05rem; color: #444; margin-bottom: 1.2rem; }}
+      .badge      {{ display: inline-block; background: {colors['primary']}; color: #fff;
+                    padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; }}
+      .ok-box     {{ border-left: 5px solid {colors['accent']}; padding: 12px 16px;
+                    background: #F8FAFC; border-radius: 6px; }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -55,9 +59,27 @@ st.markdown(
 
 
 # --------------------------------------------------------------------------- #
+# Cabecera de marca
+# --------------------------------------------------------------------------- #
+if logo_path:
+    _, logo_col, _ = st.columns([2, 1, 2])
+    with logo_col:
+        st.image(logo_path, use_container_width=True)
+
+st.markdown(
+    f'<h1 style="text-align:center;color:{colors["secondary"]};margin-bottom:0;">{BRAND_NAME}</h1>',
+    unsafe_allow_html=True,
+)
+st.markdown(
+    f'<p style="text-align:center;color:{colors["primary"]};font-weight:600;'
+    f'font-size:1.05rem;margin-top:0.2rem;">{BRAND_SLOGAN}</p>',
+    unsafe_allow_html=True,
+)
+
+# --------------------------------------------------------------------------- #
 # Cabecera / propuesta de valor
 # --------------------------------------------------------------------------- #
-st.markdown('<span class="badge">Flight Price Alert Web</span>', unsafe_allow_html=True)
+st.markdown('<span class="badge">Alertas de vuelos</span>', unsafe_allow_html=True)
 st.markdown('<div class="hero-title">¿Donde quieres viajar y cuanto quieres pagar?</div>',
             unsafe_allow_html=True)
 st.markdown(

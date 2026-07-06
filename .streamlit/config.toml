@@ -1,10 +1,10 @@
-# Tema visual institucional de la web.
-# Colores: navy #0D2A5A (primario), rojo #C0392B (acento).
+# Tema visual de marca (somosrata).
+# Turquesa #16B8B8 (primario/botones), azul oscuro #0B1F3A (texto/titulos).
 [theme]
-primaryColor = "#C0392B"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F2F5FA"
-textColor = "#0D2A5A"
+primaryColor = "#16B8B8"
+backgroundColor = "#F8FAFC"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#0B1F3A"
 font = "sans serif"
 
 [server]

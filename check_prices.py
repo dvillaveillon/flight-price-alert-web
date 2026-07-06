@@ -19,6 +19,7 @@ Se puede ejecutar directamente:  python check_prices.py
 from __future__ import annotations
 
 from src.alert_rules import build_message, evaluate
+from src.branding import BRAND_NAME, build_email_html, build_whatsapp_message, get_logo_url
 from src.database import Database
 from src.flight_api import get_best_offer
 from src.notifier_email import send_email
@@ -84,14 +85,15 @@ def process_alert(db: Database, alert: dict) -> None:
     # 5) Notificar. Recuperamos contacto del usuario.
     user = _lookup_user_contact(db, alert.get("user_id"))
     message = build_message(alert, best)
-    subject = f"Oportunidad de vuelo {alert.get('origin')} -> {alert.get('destination')}"
+    subject = f"{BRAND_NAME}: oportunidad de vuelo {alert.get('origin')} -> {alert.get('destination')}"
 
     notified_any = False
 
     # 5a) Email (canal confiable).
     email = user.get("email")
     if email:
-        ok, detail = send_email(email, subject, message)
+        html_body = build_email_html(alert, best)
+        ok, detail = send_email(email, subject, message, html_body=html_body)
         db.insert_notification(
             alert_id, "email", message,
             "sent" if ok else "failed", decision.price,
@@ -101,9 +103,10 @@ def process_alert(db: Database, alert: dict) -> None:
     # 5b) WhatsApp (opcional; requiere join al sandbox de Twilio).
     whatsapp = user.get("whatsapp")
     if whatsapp:
-        ok, detail = send_whatsapp(whatsapp, message)
+        whatsapp_text = build_whatsapp_message(alert, best)
+        ok, detail = send_whatsapp(whatsapp, whatsapp_text, media_url=get_logo_url())
         db.insert_notification(
-            alert_id, "whatsapp", message,
+            alert_id, "whatsapp", whatsapp_text,
             "sent" if ok else "failed", decision.price,
         )
         notified_any = notified_any or ok

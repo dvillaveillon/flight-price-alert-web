@@ -13,10 +13,13 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from src.branding import BRAND_NAME, get_logo_local_path
 from src.database import Database
 
-st.set_page_config(page_title="Historico de precios", page_icon="📈", layout="wide")
+logo_path = get_logo_local_path()
+st.set_page_config(page_title=f"{BRAND_NAME} · Historico", page_icon=logo_path or "🐭", layout="wide")
 
+st.caption(BRAND_NAME)
 st.title("📈 Historico de precios")
 st.caption("Evolucion de precios observados por el sistema para cada alerta.")
 

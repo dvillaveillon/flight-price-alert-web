@@ -24,11 +24,21 @@ from src.utils import get_logger, get_secret
 logger = get_logger(__name__)
 
 
-def send_whatsapp(to_number: str, body: str) -> tuple[bool, str]:
+def send_whatsapp(to_number: str, body: str,
+                  media_url: str | None = None) -> tuple[bool, str]:
     """
     Envia un mensaje de WhatsApp. Devuelve (exito, detalle).
 
+    `media_url` es opcional (ej. el logo de marca): si Twilio falla al
+    adjuntarlo, se reintenta automaticamente solo con texto para no perder
+    la notificacion.
+
     En modo dry-run (sin credenciales) devuelve (True, "dry-run").
+
+    Nota: el Sandbox de Twilio NO permite cambiar el nombre ni la foto de
+    perfil del remitente (siempre se ve como "Twilio Sandbox"). Para tener un
+    remitente con nombre/foto/perfil propio de la marca hay que migrar a un
+    numero de WhatsApp Business API aprobado por Meta.
     """
     sid = get_secret("TWILIO_ACCOUNT_SID")
     token = get_secret("TWILIO_AUTH_TOKEN")
@@ -38,7 +48,7 @@ def send_whatsapp(to_number: str, body: str) -> tuple[bool, str]:
         return False, "sin_numero_destino"
 
     if not (sid and token and from_number):
-        logger.info("[WHATSAPP dry-run] Para: %s", to_number)
+        logger.info("[WHATSAPP dry-run] Para: %s | Media: %s", to_number, media_url or "-")
         logger.info("[WHATSAPP dry-run] Cuerpo:\n%s", body)
         return True, "dry-run"
 
@@ -49,7 +59,20 @@ def send_whatsapp(to_number: str, body: str) -> tuple[bool, str]:
         dest = to_number if to_number.startswith("whatsapp:") else f"whatsapp:{to_number}"
 
         client = Client(sid, token)
-        message = client.messages.create(from_=from_number, to=dest, body=body)
+        try:
+            message = client.messages.create(
+                from_=from_number, to=dest, body=body,
+                **({"media_url": [media_url]} if media_url else {}),
+            )
+        except Exception as media_exc:
+            if not media_url:
+                raise
+            logger.warning(
+                "Fallo enviando WhatsApp con imagen a %s (%s). Reintentando solo texto.",
+                to_number, media_exc,
+            )
+            message = client.messages.create(from_=from_number, to=dest, body=body)
+
         logger.info("WhatsApp enviado a %s (sid=%s).", to_number, message.sid)
         return True, f"sid={message.sid}"
     except Exception as exc:

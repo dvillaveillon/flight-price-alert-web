@@ -20,9 +20,14 @@ from src.utils import get_logger, get_secret
 logger = get_logger(__name__)
 
 
-def send_email(to_email: str, subject: str, body: str) -> tuple[bool, str]:
+def send_email(to_email: str, subject: str, body: str,
+               html_body: str | None = None) -> tuple[bool, str]:
     """
     Envia un email. Devuelve (exito, detalle).
+
+    `html_body` es opcional: si se pasa, el correo se envia como multipart
+    (texto plano + HTML). Si se omite, se manda solo el texto plano (igual
+    que antes).
 
     En modo dry-run (sin API key) devuelve (True, "dry-run") para que el flujo
     de la demo continue y quede registrado en la tabla notifications.
@@ -39,12 +44,15 @@ def send_email(to_email: str, subject: str, body: str) -> tuple[bool, str]:
         from sendgrid import SendGridAPIClient  # import perezoso
         from sendgrid.helpers.mail import Mail
 
-        message = Mail(
+        mail_kwargs = dict(
             from_email=from_email,
             to_emails=to_email,
             subject=subject,
             plain_text_content=body,
         )
+        if html_body:
+            mail_kwargs["html_content"] = html_body
+        message = Mail(**mail_kwargs)
         client = SendGridAPIClient(api_key)
         response = client.send(message)
         ok = 200 <= response.status_code < 300
