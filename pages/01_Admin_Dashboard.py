@@ -8,8 +8,8 @@ Muestra una vista operativa del sistema:
   - Tabla de alertas.
   - Tabla de notificaciones recientes.
 
-Nota: este dashboard es de demostracion. En produccion conviene protegerlo con
-una clave simple (ver bloque comentado al inicio).
+Protegido por clave si se define la variable ADMIN_PASSWORD (ver bloque abajo).
+Sin esa variable, el panel queda abierto (modo demo).
 """
 
 from __future__ import annotations
@@ -24,12 +24,13 @@ from src.utils import get_secret
 logo_path = get_logo_local_path()
 st.set_page_config(page_title=f"{BRAND_NAME} · Admin", page_icon=logo_path or "🐭", layout="wide")
 
-# --- (Opcional) proteccion basica por clave. Descomenta para activarla. ---
-# admin_pass = get_secret("ADMIN_PASSWORD")
-# if admin_pass:
-#     entered = st.text_input("Clave de acceso", type="password")
-#     if entered != admin_pass:
-#         st.stop()
+# --- Proteccion basica por clave (ADMIN_PASSWORD). Sin esta variable definida,
+# el panel queda abierto (comportamiento de modo demo). ---
+admin_pass = get_secret("ADMIN_PASSWORD")
+if admin_pass:
+    entered = st.text_input("Clave de acceso", type="password")
+    if entered != admin_pass:
+        st.stop()
 
 st.caption(BRAND_NAME)
 st.title("📊 Panel de administracion")
