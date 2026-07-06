@@ -61,20 +61,22 @@ st.markdown(
 # --------------------------------------------------------------------------- #
 # Cabecera de marca
 # --------------------------------------------------------------------------- #
+# El logo ya incluye el nombre y el eslogan, asi que si esta disponible se
+# muestra solo (mas grande); si no, se usa texto de respaldo.
 if logo_path:
-    _, logo_col, _ = st.columns([2, 1, 2])
+    _, logo_col, _ = st.columns([1, 2, 1])
     with logo_col:
         st.image(logo_path, use_container_width=True)
-
-st.markdown(
-    f'<h1 style="text-align:center;color:{colors["secondary"]};margin-bottom:0;">{BRAND_NAME}</h1>',
-    unsafe_allow_html=True,
-)
-st.markdown(
-    f'<p style="text-align:center;color:{colors["primary"]};font-weight:600;'
-    f'font-size:1.05rem;margin-top:0.2rem;">{BRAND_SLOGAN}</p>',
-    unsafe_allow_html=True,
-)
+else:
+    st.markdown(
+        f'<h1 style="text-align:center;color:{colors["secondary"]};margin-bottom:0;">{BRAND_NAME}</h1>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<p style="text-align:center;color:{colors["primary"]};font-weight:600;'
+        f'font-size:1.05rem;margin-top:0.2rem;">{BRAND_SLOGAN}</p>',
+        unsafe_allow_html=True,
+    )
 
 # --------------------------------------------------------------------------- #
 # Cabecera / propuesta de valor

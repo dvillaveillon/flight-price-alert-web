@@ -89,11 +89,19 @@ def build_email_html(alert: dict[str, Any], offer: dict[str, Any]) -> str:
     vuelta = alert.get("return_date")
     link = offer.get("booking_link", "")
 
-    logo_html = (
-        f'<img src="{logo_url}" alt="{BRAND_NAME}" width="88" '
-        'style="display:block;margin:0 auto 12px auto;border:0;" />'
-        if logo_url else ""
-    )
+    # Si hay logo, se muestra solo por si solo (ya incluye nombre y eslogan
+    # dentro de la imagen); si no esta configurado, se usa texto de respaldo.
+    if logo_url:
+        header_html = (
+            f'<img src="{logo_url}" alt="{BRAND_NAME}" width="220" '
+            'style="display:block;margin:0 auto;border:0;" />'
+        )
+    else:
+        header_html = (
+            f'<div style="color:#ffffff;font-size:22px;font-weight:800;">{BRAND_NAME}</div>'
+            f'<div style="color:{colors["yellow"]};font-size:13px;font-weight:600;margin-top:4px;">'
+            f'{BRAND_SLOGAN}</div>'
+        )
 
     rows = [("Origen", origen), ("Destino", destino), ("Fecha de ida", salida)]
     if vuelta:
@@ -130,9 +138,7 @@ def build_email_html(alert: dict[str, Any], offer: dict[str, Any]) -> str:
              style="background-color:#ffffff;border-radius:10px;overflow:hidden;">
         <tr>
           <td style="background-color:{colors['secondary']};padding:24px;text-align:center;">
-            {logo_html}
-            <div style="color:#ffffff;font-size:22px;font-weight:800;">{BRAND_NAME}</div>
-            <div style="color:{colors['yellow']};font-size:13px;font-weight:600;margin-top:4px;">{BRAND_SLOGAN}</div>
+            {header_html}
           </td>
         </tr>
         <tr>
