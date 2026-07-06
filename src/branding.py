@@ -1,7 +1,7 @@
 """
 branding.py
 -----------
-Configuracion e identidad visual de marca (somosrata). Centraliza nombre,
+Configuracion e identidad visual de marca (Somos-Rata). Centraliza nombre,
 eslogan, colores y logo para que la web, el email y el WhatsApp usen siempre
 los mismos valores, y para construir el contenido (HTML de email, texto de
 WhatsApp) que lleva esa marca.
@@ -10,7 +10,7 @@ Los colores tienen defaults de marca; se pueden sobreescribir con las
 variables BRAND_PRIMARY_COLOR, BRAND_SECONDARY_COLOR, BRAND_ACCENT_COLOR y
 BRAND_YELLOW. El logo requiere una URL publica (BRAND_LOGO_URL) para usarse
 en email/WhatsApp; en Streamlit tambien se puede mostrar desde el archivo
-local assets/somosrata-logo.png.
+local assets/somos_rata_logo.png.
 """
 
 from __future__ import annotations
@@ -20,11 +20,11 @@ from typing import Any
 
 from src.utils import get_secret
 
-BRAND_NAME = "somosrata"
+BRAND_NAME = "Somos-Rata"
 BRAND_SLOGAN = "Dinos tu precio. Nosotros te avisamos."
 
 _LOGO_LOCAL_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), "assets", "somosrata-logo.png"
+    os.path.dirname(os.path.dirname(__file__)), "assets", "somos_rata_logo.png"
 )
 
 
@@ -39,7 +39,7 @@ def get_logo_local_path() -> str | None:
 
 
 def get_colors() -> dict[str, str]:
-    """Colores de marca, con defaults de somosrata si no hay overrides por entorno."""
+    """Colores de marca, con defaults de Somos-Rata si no hay overrides por entorno."""
     return {
         "primary": get_secret("BRAND_PRIMARY_COLOR", "#16B8B8"),
         "secondary": get_secret("BRAND_SECONDARY_COLOR", "#0B1F3A"),
@@ -73,7 +73,7 @@ def build_whatsapp_message(alert: dict[str, Any], offer: dict[str, Any]) -> str:
 
 def build_email_html(alert: dict[str, Any], offer: dict[str, Any]) -> str:
     """
-    Email HTML con branding de somosrata. Usa tablas y estilos inline (sin CSS
+    Email HTML con branding de Somos-Rata. Usa tablas y estilos inline (sin CSS
     externo ni flex/grid) para verse bien tanto en Gmail como en Outlook.
     """
     colors = get_colors()

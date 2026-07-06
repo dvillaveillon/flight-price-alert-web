@@ -76,9 +76,9 @@ Tu URL de Streamlit (`https://<tu-app>.streamlit.app`) ya es publica y responsiv
 Compartela por correo, WhatsApp o QR. Cualquier persona puede crear una alerta
 desde el celular o el computador sin instalar nada.
 
-## 8. Branding somosrata
+## 8. Branding Somos-Rata
 
-1. **Logo**: sube el archivo del logo al repo en la ruta `assets/somosrata-logo.png`.
+1. **Logo**: sube el archivo del logo al repo en la ruta `assets/somos_rata_logo.png`.
    Streamlit lo toma automaticamente desde ahi (cabecera de la web y favicon). Si
    el archivo no existe todavia, la app sigue funcionando igual, solo sin logo
    (usa un emoji como respaldo).
@@ -97,6 +97,6 @@ desde el celular o el computador sin instalar nada.
    de WhatsApp siempre se ve como "Twilio Sandbox" (no se puede personalizar
    nombre ni foto de perfil), y cada destinatario debe escribir `join <palabra>`
    antes de poder recibir mensajes. Para que **cualquier usuario** reciba
-   WhatsApp con el remitente "somosrata" (nombre, foto, sin el paso de "join"),
+   WhatsApp con el remitente "Somos-Rata" (nombre, foto, sin el paso de "join"),
    hay que migrar a un numero de **WhatsApp Business API aprobado por Meta**
    (proceso de verificacion de negocio, toma dias y tiene costo asociado).
