@@ -63,6 +63,16 @@ def _new_id() -> str:
     return str(uuid.uuid4())
 
 
+def _supabase_row(row: dict[str, Any]) -> dict[str, Any]:
+    """
+    Convierte cadenas vacias a NULL antes de insertar en Postgres.
+
+    El backend CSV usa "" para representar "sin valor" (funciona bien en texto
+    plano), pero Postgres rechaza "" para columnas timestamptz/date/numeric.
+    """
+    return {k: (None if v == "" else v) for k, v in row.items()}
+
+
 class Database:
     """
     Fachada de persistencia. Detecta automaticamente el backend en __init__.
@@ -193,7 +203,7 @@ class Database:
             "last_notified_at": "",
         }
         if self.backend == "supabase":
-            self._client.table("alerts").insert(row).execute()
+            self._client.table("alerts").insert(_supabase_row(row)).execute()
         else:
             self._csv_append("alerts", row)
         return alert_id
@@ -255,7 +265,7 @@ class Database:
             "booking_link": offer.get("booking_link", ""),
         }
         if self.backend == "supabase":
-            self._client.table("price_history").insert(row).execute()
+            self._client.table("price_history").insert(_supabase_row(row)).execute()
         else:
             self._csv_append("price_history", row)
         return price_id
@@ -290,7 +300,7 @@ class Database:
             "price_at_notification": price if price is not None else "",
         }
         if self.backend == "supabase":
-            self._client.table("notifications").insert(row).execute()
+            self._client.table("notifications").insert(_supabase_row(row)).execute()
         else:
             self._csv_append("notifications", row)
         return notification_id
