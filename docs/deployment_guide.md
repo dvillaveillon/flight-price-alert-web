@@ -83,12 +83,21 @@ desde el celular o el computador sin instalar nada.
    el archivo no existe todavia, la app sigue funcionando igual, solo sin logo
    (usa un emoji como respaldo).
 2. **Logo en email y WhatsApp**: SendGrid y Twilio necesitan una **URL publica**
-   del logo (no un archivo local) para poder mostrarlo. Sube la imagen a algun
-   hosting publico (por ejemplo, el propio repo de GitHub via "raw.githubusercontent.com",
-   un bucket publico, o cualquier CDN) y define esa URL como la variable
-   `BRAND_LOGO_URL` (en Streamlit Secrets y en GitHub Actions Secrets). Si no la
-   defines, el email se manda igual sin logo, y el WhatsApp se manda solo con
-   texto (sin imagen adjunta) — nunca se rompe el envio.
+   del logo (no un archivo local) para poder mostrarlo. Como el repo es
+   privado, se uso **GitHub Pages** (gratis) para publicar solo el logo sin
+   hacer publico el codigo:
+   ```
+   gh api -X POST /repos/<usuario>/<repo>/pages -f "source[branch]=main" -f "source[path]=/"
+   ```
+   Esto publica el contenido del repo (incluida la carpeta `assets/`) en
+   `https://<usuario>.github.io/<repo>/`, manteniendo el codigo fuente
+   privado. La URL final del logo queda como
+   `https://<usuario>.github.io/<repo>/assets/somos_rata_logo.png`. Define esa
+   URL como la variable `BRAND_LOGO_URL` en **GitHub Actions Secrets** (es lo
+   unico que la usa: el email y el WhatsApp los manda el cron, no la web de
+   Streamlit). Si no la defines, el email se manda igual sin logo, y el
+   WhatsApp se manda solo con texto (sin imagen adjunta) — nunca se rompe el
+   envio.
 3. **Colores**: los colores de marca tienen defaults ya aplicados (turquesa,
    azul oscuro, coral, amarillo). Se pueden sobreescribir con
    `BRAND_PRIMARY_COLOR`, `BRAND_SECONDARY_COLOR`, `BRAND_ACCENT_COLOR` y
