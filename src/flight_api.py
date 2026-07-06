@@ -17,11 +17,21 @@ Contrato comun de una oferta (dict):
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import quote
 
 from src.utils import get_flight_provider, get_logger, get_secret
 from src import mock_flight_api
 
 logger = get_logger(__name__)
+
+
+def _reference_link(origin: str, destination: str, departure_date: str) -> str:
+    """
+    Enlace de referencia para que el usuario verifique la ruta (no es un enlace
+    de compra directa: Duffel/Amadeus no exponen checkout publico por oferta).
+    """
+    query = f"Flights from {origin} to {destination} on {departure_date}"
+    return f"https://www.google.com/travel/flights?q={quote(query)}"
 
 
 # --------------------------------------------------------------------------- #
@@ -60,13 +70,13 @@ def _search_amadeus(params: dict[str, Any]) -> list[dict[str, Any]]:
             nonStop="true" if params.get("direct_only") else "false",
             max=10,
         )
-        return [_normalize_amadeus(o) for o in response.data]
+        return [_normalize_amadeus(o, params) for o in response.data]
     except Exception as exc:  # ante cualquier fallo real, no rompemos el worker
         logger.error("Error consultando Amadeus (%s). Cayendo a mock.", exc)
         return mock_flight_api.search_flights(params)
 
 
-def _normalize_amadeus(offer: dict) -> dict[str, Any]:
+def _normalize_amadeus(offer: dict, params: dict[str, Any]) -> dict[str, Any]:
     """Traduce una oferta cruda de Amadeus al contrato comun."""
     itineraries = offer.get("itineraries", [])
     outbound = itineraries[0]["segments"] if itineraries else []
@@ -79,7 +89,9 @@ def _normalize_amadeus(offer: dict) -> dict[str, Any]:
         "return_time": inbound[0]["departure"]["at"] if inbound else "",
         "stops": max(len(outbound) - 1, 0),
         "provider": "amadeus",
-        "booking_link": "",
+        "booking_link": _reference_link(
+            params["origin"], params["destination"], str(params["departure_date"])
+        ),
     }
 
 
@@ -136,13 +148,13 @@ def _search_duffel(params: dict[str, Any]) -> list[dict[str, Any]]:
         )
         resp.raise_for_status()
         offers = resp.json().get("data", {}).get("offers", [])
-        return [_normalize_duffel(o) for o in offers]
+        return [_normalize_duffel(o, params) for o in offers]
     except Exception as exc:
         logger.error("Error consultando Duffel (%s). Cayendo a mock.", exc)
         return mock_flight_api.search_flights(params)
 
 
-def _normalize_duffel(offer: dict) -> dict[str, Any]:
+def _normalize_duffel(offer: dict, params: dict[str, Any]) -> dict[str, Any]:
     """Traduce una oferta cruda de Duffel al contrato comun."""
     slices = offer.get("slices", [])
     out_seg = slices[0]["segments"] if slices else []
@@ -155,7 +167,9 @@ def _normalize_duffel(offer: dict) -> dict[str, Any]:
         "return_time": in_seg[0]["departing_at"] if in_seg else "",
         "stops": max(len(out_seg) - 1, 0),
         "provider": "duffel",
-        "booking_link": "",
+        "booking_link": _reference_link(
+            params["origin"], params["destination"], str(params["departure_date"])
+        ),
     }
 
 
