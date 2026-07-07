@@ -14,7 +14,7 @@ En el panel de tu app: **Settings → Secrets**. Pega en formato TOML solo lo qu
 uses (no hace falta nada para el modo demo):
 
 ```toml
-FLIGHT_PROVIDER = "mock"
+FLIGHT_PROVIDER = "duffel"
 SUPABASE_URL = "https://xxxx.supabase.co"
 SUPABASE_KEY = "xxxx"
 SENDGRID_API_KEY = "SG.xxxx"
@@ -23,9 +23,12 @@ TWILIO_ACCOUNT_SID = "ACxxxx"
 TWILIO_AUTH_TOKEN = "xxxx"
 TWILIO_WHATSAPP_FROM = "whatsapp:+14155238886"
 NOTIFY_COOLDOWN_HOURS = "24"
+ADMIN_PASSWORD = "elige-una-clave"
 ```
 
 Streamlit expone esto como `st.secrets`, que `get_secret()` lee automaticamente.
+`ADMIN_PASSWORD` protege la pagina "Admin Dashboard" (pide clave antes de
+mostrar datos); si se omite, el panel queda abierto (modo demo).
 
 ## 3. Configurar Supabase
 
@@ -41,6 +44,22 @@ Streamlit expone esto como `st.secrets`, que `get_secret()` lee automaticamente.
 2. **Settings → API Keys → Create API Key** (permiso "Mail Send"). → `SENDGRID_API_KEY`.
 3. Verifica un remitente en **Settings → Sender Authentication** (Single Sender).
    Ese correo va en `SENDGRID_FROM_EMAIL`.
+
+## 4b. Configurar el proveedor de precios de vuelos (Duffel)
+
+Se eligio **Duffel** en vez de Amadeus: el portal self-service gratuito de
+Amadeus for Developers fue decomisionado (aviso de julio 2026) y ya no permite
+registro de cuentas nuevas. Duffel tiene un entorno de test gratuito y estable.
+
+1. Crea cuenta en https://app.duffel.com/join.
+2. **Developers → Access tokens**, con el toggle **"Test mode"** activo.
+3. Copia el token (empieza con `duffel_test_...`) → `DUFFEL_ACCESS_TOKEN`.
+4. Define `FLIGHT_PROVIDER = "duffel"`.
+
+`src/flight_api.py` ya tiene tambien una implementacion lista para Amadeus
+(`_search_amadeus`) por si en el futuro vuelve a estar disponible o se usa otra
+cuenta empresarial — solo hay que definir `AMADEUS_CLIENT_ID` /
+`AMADEUS_CLIENT_SECRET` y cambiar `FLIGHT_PROVIDER` a `"amadeus"`.
 
 ## 5. Configurar Twilio WhatsApp Sandbox
 
@@ -109,3 +128,31 @@ desde el celular o el computador sin instalar nada.
    WhatsApp con el remitente "Somos-Rata" (nombre, foto, sin el paso de "join"),
    hay que migrar a un numero de **WhatsApp Business API aprobado por Meta**
    (proceso de verificacion de negocio, toma dias y tiene costo asociado).
+
+## 9. Estado de este despliegue
+
+Referencia del despliegue en vivo (julio 2026):
+
+- **Web publica**: https://somosrata.streamlit.app/
+- **Repo**: GitHub privado (`dvillaveillon/flight-price-alert-web`).
+- **Base de datos**: Supabase (PostgreSQL), 4 tablas, sin RLS (aceptable porque
+  solo el backend de la app usa la key, nunca el navegador del usuario final).
+- **Proveedor de precios**: Duffel, entorno test (`FLIGHT_PROVIDER=duffel`).
+- **Email**: SendGrid, remitente verificado por Single Sender (sin
+  autenticacion de dominio DNS todavia — los primeros correos pueden caer en
+  spam).
+- **WhatsApp**: Twilio Sandbox (requiere `join these-garden` antes de recibir).
+- **Automatizacion**: GitHub Actions, cron cada 6 horas (`0 */6 * * *`).
+- **Admin Dashboard**: protegido con `ADMIN_PASSWORD`.
+- **Logo publico**: servido via GitHub Pages
+  (`https://dvillaveillon.github.io/flight-price-alert-web/assets/somos_rata_logo.png`),
+  repo fuente sigue privado.
+
+### Pendientes conocidos (no bloquean el uso, son mejoras futuras)
+
+- Migrar de Twilio Sandbox a WhatsApp Business API aprobado por Meta (elimina
+  el paso de "join" y personaliza nombre/foto del remitente).
+- Autenticar el dominio de envio en SendGrid para mejorar entregabilidad
+  (reduce que los correos caigan en spam).
+- Evaluar si conviene activar Row Level Security (RLS) en Supabase si mas
+  adelante se expone la API a otros clientes ademas del backend propio.
