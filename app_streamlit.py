@@ -21,6 +21,7 @@ import streamlit as st
 
 from src.branding import BRAND_NAME, BRAND_SLOGAN, get_colors, get_logo_local_path
 from src.database import Database
+from src.notifier_whatsapp import send_whatsapp
 from src.utils import (
     dates_are_coherent,
     is_valid_email,
@@ -214,6 +215,25 @@ if submitted:
                 'un vuelo igual o menor a tu precio objetivo.</div>',
                 unsafe_allow_html=True,
             )
+
+            # Confirmacion inmediata por WhatsApp (no depende de la respuesta
+            # automatica del Sandbox de Twilio, que es poco confiable). Si el
+            # numero aun no hizo "join" al sandbox, este envio simplemente
+            # fallara en silencio: no rompe la creacion de la alerta.
+            if whatsapp.strip():
+                try:
+                    send_whatsapp(
+                        whatsapp.strip(),
+                        f"Hola {name.strip()}! Soy {BRAND_NAME}. Tu alerta "
+                        f"{normalize_iata(origin)} -> {normalize_iata(destination)} "
+                        "quedo creada y tu WhatsApp esta conectado. Te avisamos "
+                        "aqui cuando encontremos un precio que calce.",
+                    )
+                except Exception:
+                    pass
+                st.caption("Si agregaste WhatsApp, revisa que te haya llegado "
+                           "un mensaje de confirmacion (puede tardar unos segundos).")
+
             st.caption(f"Backend de datos activo: {db.backend} "
                        "(en modo demo se guarda en CSV local).")
             st.balloons()
