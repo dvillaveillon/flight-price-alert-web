@@ -69,6 +69,15 @@ def evaluate(alert: dict[str, Any], best_offer: dict[str, Any] | None,
     except (TypeError, ValueError):
         return Decision(False, "datos_precio_invalidos")
 
+    # Condicion 0: el proveedor puede devolver una moneda distinta a la que
+    # eligio el usuario (ej. el proveedor solo entrega EUR en su entorno de
+    # test). Sin conversion de moneda, comparar numeros de monedas distintas
+    # da falsos positivos/negativos, asi que si no coinciden NO se notifica.
+    offer_currency = str(best_offer.get("currency") or "").strip().upper()
+    alert_currency = str(alert.get("currency") or "").strip().upper()
+    if offer_currency and alert_currency and offer_currency != alert_currency:
+        return Decision(False, "moneda_no_coincide", price=current_price)
+
     # Condicion 1: el precio debe cumplir el umbral (<=).
     if current_price > max_price:
         return Decision(False, "precio_sobre_umbral", price=current_price)

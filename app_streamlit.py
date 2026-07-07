@@ -129,7 +129,12 @@ with st.form("alert_form", clear_on_submit=False):
     st.subheader("Preferencias de vuelo")
     c8, c9, c10 = st.columns(3)
     with c8:
-        currency = st.selectbox("Moneda", ["USD", "EUR", "CLP"], index=0)
+        # Nota: por ahora el proveedor de precios solo devuelve ofertas en
+        # EUR (su entorno de test no soporta conversion). Se limita el
+        # selector a EUR para evitar alertas que nunca podrian dispararse
+        # correctamente (comparar precios en monedas distintas sin conversion
+        # da resultados falsos). Ver src/alert_rules.py: evaluate().
+        currency = st.selectbox("Moneda", ["EUR"], index=0)
         cabin = st.selectbox("Cabina",
                              ["economy", "premium_economy", "business"], index=0)
     with c9:
@@ -147,6 +152,8 @@ with st.form("alert_form", clear_on_submit=False):
         f"Precio maximo que estas dispuesto a pagar ({currency}) *",
         min_value=1.0, value=500.0, step=10.0,
     )
+    st.caption("Por ahora los precios se buscan solo en euros (EUR), "
+               "sin importar la ruta.")
 
     consent = st.checkbox(
         "Acepto recibir alertas por email y/o WhatsApp sobre esta busqueda. *"
