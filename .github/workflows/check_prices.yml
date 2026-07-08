@@ -47,4 +47,5 @@ jobs:
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
           TWILIO_WHATSAPP_FROM: ${{ secrets.TWILIO_WHATSAPP_FROM }}
           NOTIFY_COOLDOWN_HOURS: ${{ secrets.NOTIFY_COOLDOWN_HOURS }}
+          BRAND_LOGO_URL: ${{ secrets.BRAND_LOGO_URL }}
         run: python check_prices.py
