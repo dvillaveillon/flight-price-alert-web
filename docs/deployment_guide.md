@@ -184,3 +184,14 @@ Referencia del despliegue en vivo (julio 2026):
   Actions Secrets, que usa el cron). Sin ellas, `send_whatsapp()` entraba en
   modo dry-run sin avisar. Fix: se agregaron los secrets faltantes en
   Streamlit y se agrego logging para que un fallo similar quede registrado.
+- **Email de alerta sin logo (secret no inyectado)**: `BRAND_LOGO_URL`
+  estaba correctamente guardado como secret en GitHub, pero
+  `.github/workflows/check_prices.yml` nunca lo listaba en su bloque `env:`.
+  GitHub Actions solo inyecta un secret como variable de entorno si esta
+  explicitamente mapeado ahi — tenerlo guardado en el repo no alcanza. El
+  cron nunca veia la URL y `build_email_html()` siempre caia al texto de
+  respaldo ("Somos-Rata" + eslogan) en vez de mostrar el logo. Mismo tipo de
+  bug que el anterior (un secret que existe pero no llega al lugar donde
+  corre el codigo), esta vez en el workflow en vez de en Streamlit Secrets.
+  Fix: se agrego `BRAND_LOGO_URL: ${{ secrets.BRAND_LOGO_URL }}` al `env:`
+  del workflow.
