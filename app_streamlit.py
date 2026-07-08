@@ -24,11 +24,13 @@ from src.database import Database
 from src.notifier_whatsapp import send_whatsapp
 from src.utils import (
     dates_are_coherent,
+    get_logger,
     is_valid_email,
     is_valid_iata,
     normalize_iata,
 )
 
+logger = get_logger(__name__)
 colors = get_colors()
 logo_path = get_logo_local_path()
 
@@ -226,15 +228,18 @@ if submitted:
             # fallara en silencio: no rompe la creacion de la alerta.
             if whatsapp.strip():
                 try:
-                    send_whatsapp(
+                    wa_ok, wa_detail = send_whatsapp(
                         whatsapp.strip(),
                         f"Hola {name.strip()}! Soy {BRAND_NAME}. Tu alerta "
                         f"{normalize_iata(origin)} -> {normalize_iata(destination)} "
                         "quedo creada y tu WhatsApp esta conectado. Te avisamos "
                         "aqui cuando encontremos un precio que calce.",
                     )
-                except Exception:
-                    pass
+                    logger.info("Confirmacion WhatsApp a %s: ok=%s detail=%s",
+                                whatsapp.strip(), wa_ok, wa_detail)
+                except Exception as exc:
+                    logger.error("Error enviando confirmacion WhatsApp a %s: %s",
+                                 whatsapp.strip(), exc)
                 st.caption("Si agregaste WhatsApp, revisa que te haya llegado "
                            "un mensaje de confirmacion (puede tardar unos segundos).")
 
