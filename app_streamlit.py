@@ -19,7 +19,13 @@ from datetime import date, timedelta
 
 import streamlit as st
 
-from src.branding import BRAND_NAME, BRAND_SLOGAN, get_colors, get_logo_local_path
+from src.branding import (
+    BRAND_NAME,
+    BRAND_SLOGAN,
+    get_colors,
+    get_logo_local_path,
+    get_logo_url,
+)
 from src.database import Database
 from src.notifier_whatsapp import send_whatsapp
 from src.utils import (
@@ -230,10 +236,15 @@ if submitted:
                 try:
                     wa_ok, wa_detail = send_whatsapp(
                         whatsapp.strip(),
-                        f"Hola {name.strip()}! Soy {BRAND_NAME}. Tu alerta "
-                        f"{normalize_iata(origin)} -> {normalize_iata(destination)} "
-                        "quedo creada y tu WhatsApp esta conectado. Te avisamos "
-                        "aqui cuando encontremos un precio que calce.",
+                        f"🐭✈️ Hola {name.strip()}! Soy {BRAND_NAME}.\n\n"
+                        f"Tu alerta {normalize_iata(origin)} -> "
+                        f"{normalize_iata(destination)} ya quedo activa y tu "
+                        "WhatsApp esta conectado correctamente.\n\n"
+                        f"{BRAND_SLOGAN}\n\n"
+                        "Te vamos a avisar aqui apenas encontremos un precio "
+                        "que calce con lo que buscas. Gracias por confiar en "
+                        "nosotros!",
+                        media_url=get_logo_url(),
                     )
                     logger.info("Confirmacion WhatsApp a %s: ok=%s detail=%s",
                                 whatsapp.strip(), wa_ok, wa_detail)
