@@ -26,14 +26,13 @@ from src.branding import (
     get_logo_local_path,
     get_logo_url,
 )
+from src.city_resolver import describe_location, resolve_location
 from src.database import Database
 from src.notifier_whatsapp import send_whatsapp
 from src.utils import (
     dates_are_coherent,
     get_logger,
     is_valid_email,
-    is_valid_iata,
-    normalize_iata,
 )
 
 logger = get_logger(__name__)
@@ -101,6 +100,28 @@ st.markdown(
 
 
 # --------------------------------------------------------------------------- #
+# Tu ruta (fuera del form: para poder mostrar el codigo resuelto en vivo,
+# mientras el usuario escribe, antes de enviar el formulario).
+# --------------------------------------------------------------------------- #
+st.subheader("Tu ruta")
+c3, c4 = st.columns(2)
+with c3:
+    origin = st.text_input("Origen (ciudad o código IATA) *", placeholder="Santiago o SCL")
+    origin_hint = describe_location(origin) if origin.strip() else None
+    if origin.strip():
+        st.caption(origin_hint or "No reconocemos esa ciudad. Escribe el código "
+                   "IATA de 3 letras (ej. SCL) o prueba con el nombre en "
+                   "español/inglés.")
+with c4:
+    destination = st.text_input("Destino (ciudad o código IATA) *", placeholder="Madrid o MAD")
+    destination_hint = describe_location(destination) if destination.strip() else None
+    if destination.strip():
+        st.caption(destination_hint or "No reconocemos esa ciudad. Escribe el "
+                   "código IATA de 3 letras (ej. MAD) o prueba con el nombre "
+                   "en español/inglés.")
+
+
+# --------------------------------------------------------------------------- #
 # Formulario de alerta
 # --------------------------------------------------------------------------- #
 with st.form("alert_form", clear_on_submit=False):
@@ -111,13 +132,6 @@ with st.form("alert_form", clear_on_submit=False):
         email = st.text_input("Email *", placeholder="tucorreo@ejemplo.com")
     with c2:
         whatsapp = st.text_input("WhatsApp (opcional)", placeholder="+56912345678")
-
-    st.subheader("Tu ruta")
-    c3, c4 = st.columns(2)
-    with c3:
-        origin = st.text_input("Origen (IATA) *", placeholder="SCL", max_chars=3)
-    with c4:
-        destination = st.text_input("Destino (IATA) *", placeholder="MAD", max_chars=3)
 
     st.subheader("Fechas y pasajeros")
     c5, c6, c7 = st.columns(3)
@@ -177,15 +191,22 @@ def _flex_to_days(label: str) -> int:
 
 if submitted:
     # --- Validaciones ---
+    origin_code = resolve_location(origin)
+    destination_code = resolve_location(destination)
+
     errors = []
     if not name.strip():
         errors.append("El nombre es obligatorio.")
     if not is_valid_email(email):
         errors.append("El email no tiene un formato valido.")
-    if not is_valid_iata(origin):
-        errors.append("El origen debe ser un codigo IATA de 3 letras (ej. SCL).")
-    if not is_valid_iata(destination):
-        errors.append("El destino debe ser un codigo IATA de 3 letras (ej. MAD).")
+    if origin_code is None:
+        errors.append("No reconocemos el origen. Escribe el codigo IATA de 3 "
+                       "letras (ej. SCL) o el nombre de la ciudad en "
+                       "espanol/ingles.")
+    if destination_code is None:
+        errors.append("No reconocemos el destino. Escribe el codigo IATA de 3 "
+                       "letras (ej. MAD) o el nombre de la ciudad en "
+                       "espanol/ingles.")
     ret = return_date if has_return else None
     if not dates_are_coherent(departure_date, ret):
         errors.append("La fecha de vuelta no puede ser anterior a la de ida.")
@@ -207,8 +228,8 @@ if submitted:
                 consent=True,
             )
             db.insert_alert(user_id, {
-                "origin": normalize_iata(origin),
-                "destination": normalize_iata(destination),
+                "origin": origin_code,
+                "destination": destination_code,
                 "departure_date": departure_date,
                 "return_date": ret,
                 "passengers": int(passengers),
@@ -237,8 +258,8 @@ if submitted:
                     wa_ok, wa_detail = send_whatsapp(
                         whatsapp.strip(),
                         f"🐭✈️ Hola {name.strip()}! Soy {BRAND_NAME}.\n\n"
-                        f"Tu alerta {normalize_iata(origin)} -> "
-                        f"{normalize_iata(destination)} ya quedo activa y tu "
+                        f"Tu alerta {origin_code} -> "
+                        f"{destination_code} ya quedo activa y tu "
                         "WhatsApp esta conectado correctamente.\n\n"
                         f"{BRAND_SLOGAN}\n\n"
                         "Te vamos a avisar aqui apenas encontremos un precio "
