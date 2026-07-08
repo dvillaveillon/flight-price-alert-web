@@ -40,6 +40,40 @@ _CITY_ALIASES: dict[str, str] = {
     "rome": "ROM",
     "miami": "MIA",
     "frankfurt": "FRA",
+
+    # --- Chile (ciudades con aeropuerto comercial) ---
+    "arica": "ARI",
+    "iquique": "IQQ",
+    "antofagasta": "ANF",
+    "calama": "CJC",
+    "copiapo": "CPO",
+    "la serena": "LSC",
+    "concepcion": "CCP",
+    "conce": "CCP",
+    "temuco": "ZCO",
+    "valdivia": "ZAL",
+    "osorno": "ZOS",
+    "puerto montt": "PMC",
+    "castro": "MHC",
+    "chiloe": "MHC",
+    "balmaceda": "BBA",
+    "coyhaique": "BBA",
+    "punta arenas": "PUQ",
+
+    # --- Capitales de Latinoamerica ---
+    "montevideo": "MVD",
+    "asuncion": "ASU",
+    "la paz": "LPB",
+    "quito": "UIO",
+    "caracas": "CCS",
+    "san jose": "SJO",
+    "san jose de costa rica": "SJO",
+    "panama": "PTY",
+    "ciudad de panama": "PTY",
+    "panama city": "PTY",
+    "rio de janeiro": "RIO",
+    "rio": "RIO",
+    "brasilia": "BSB",
 }
 
 
