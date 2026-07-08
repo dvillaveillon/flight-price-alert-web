@@ -129,7 +129,11 @@ with st.form("alert_form", clear_on_submit=False):
     st.subheader("Preferencias de vuelo")
     c8, c9, c10 = st.columns(3)
     with c8:
-        currency = st.selectbox("Moneda", ["CLP", "USD", "EUR"], index=0)
+        # Por ahora el proveedor de precios (Duffel) solo devuelve ofertas en
+        # EUR en este entorno de test (la moneda queda fija al crear el
+        # equipo en Duffel, no se puede pedir por busqueda). Se deja solo EUR
+        # para no confundir con monedas que nunca van a encontrar coincidencia.
+        currency = st.selectbox("Moneda", ["EUR"], index=0)
         cabin = st.selectbox("Cabina",
                              ["economy", "premium_economy", "business"], index=0)
     with c9:
