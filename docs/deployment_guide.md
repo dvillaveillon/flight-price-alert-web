@@ -152,7 +152,35 @@ Referencia del despliegue en vivo (julio 2026):
 
 - Migrar de Twilio Sandbox a WhatsApp Business API aprobado por Meta (elimina
   el paso de "join" y personaliza nombre/foto del remitente).
+- **Ventana de 24 horas de WhatsApp**: los mensajes que iniciamos nosotros
+  (la confirmacion de bienvenida al crear una alerta, o una notificacion de
+  precio) solo se pueden entregar si el usuario le escribio algo al sandbox
+  (el `join`) dentro de las ultimas 24 horas. Pasado ese plazo, Twilio
+  rechaza el envio con error `63016` ("outside the allowed window") a menos
+  que se use una plantilla de mensaje aprobada (no disponible en Sandbox).
+  En la practica esto funciona bien si el usuario hace el `join` justo antes
+  de crear su alerta (como se les indica), pero una notificacion de precio
+  que llegue mas de 24h despues del ultimo mensaje del usuario al sandbox
+  fallara silenciosamente por WhatsApp (el email si le llega igual, ya que
+  no tiene esta restriccion). Se resuelve migrando a WhatsApp Business API.
 - Autenticar el dominio de envio en SendGrid para mejorar entregabilidad
   (reduce que los correos caigan en spam).
 - Evaluar si conviene activar Row Level Security (RLS) en Supabase si mas
   adelante se expone la API a otros clientes ademas del backend propio.
+
+### Bugs encontrados y corregidos durante el beta
+
+- **Falsos positivos por moneda**: el proveedor de precios (Duffel) siempre
+  devuelve ofertas en EUR en este entorno de test (la moneda depende de la
+  "billing currency" del equipo en Duffel, fija desde su creacion, no de lo
+  que pida cada busqueda). Comparar un precio en EUR contra un precio
+  objetivo en CLP sin conversion causaba que alertas en CLP dispararan
+  notificaciones falsas. Fix: `src/alert_rules.py` ahora exige que la moneda
+  de la oferta coincida con la de la alerta antes de notificar; el
+  formulario solo ofrece EUR mientras tanto.
+- **Confirmacion de WhatsApp fallando en silencio**: al agregar el envio de
+  bienvenida por WhatsApp desde la web, faltaban las credenciales de Twilio
+  (y `BRAND_LOGO_URL`) en **Streamlit Secrets** (solo estaban en GitHub
+  Actions Secrets, que usa el cron). Sin ellas, `send_whatsapp()` entraba en
+  modo dry-run sin avisar. Fix: se agregaron los secrets faltantes en
+  Streamlit y se agrego logging para que un fallo similar quede registrado.
