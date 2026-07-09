@@ -71,10 +71,14 @@ def build_whatsapp_message(alert: dict[str, Any], offer: dict[str, Any]) -> str:
     return text
 
 
-def build_email_html(alert: dict[str, Any], offer: dict[str, Any]) -> str:
+def build_email_html(alert: dict[str, Any], offer: dict[str, Any],
+                     chart_url: str | None = None) -> str:
     """
     Email HTML con branding de Somos-Rata. Usa tablas y estilos inline (sin CSS
     externo ni flex/grid) para verse bien tanto en Gmail como en Outlook.
+
+    chart_url es opcional: si se pasa, se agrega el grafico de historico de
+    precios de la alerta (propio del usuario) debajo del boton "Ver vuelo".
     """
     colors = get_colors()
     logo_url = get_logo_url()
@@ -129,6 +133,20 @@ def build_email_html(alert: dict[str, Any], offer: dict[str, Any]) -> str:
         if link else ""
     )
 
+    chart_html = ""
+    if chart_url:
+        chart_note = (
+            '<p style="font-size:11px;color:#888888;margin:8px 0 0 0;text-align:center;">'
+            'Precio total del itinerario ida y vuelta (no por tramo separado).</p>'
+            if vuelta else ""
+        )
+        chart_html = (
+            '<tr><td style="padding:0 24px 20px 24px;text-align:center;">'
+            f'<img src="{chart_url}" alt="Historico de precio" width="480" '
+            'style="max-width:100%;display:block;margin:0 auto;border-radius:6px;border:1px solid #E5E9F0;" />'
+            f'{chart_note}</td></tr>'
+        )
+
     return f"""\
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
        style="background-color:#F1F5F9;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
@@ -154,6 +172,7 @@ def build_email_html(alert: dict[str, Any], offer: dict[str, Any]) -> str:
           </td>
         </tr>
         {button_html}
+        {chart_html}
         <tr>
           <td style="padding:16px 24px;background-color:#F8FAFC;border-top:1px solid #E5E9F0;">
             <p style="font-size:12px;color:#888888;margin:0;text-align:center;">

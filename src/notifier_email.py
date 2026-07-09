@@ -15,7 +15,7 @@ Requiere (solo en modo real):
 
 from __future__ import annotations
 
-from src.utils import get_logger, get_secret
+from src.utils import get_logger, get_secret, mask_contact
 
 logger = get_logger(__name__)
 
@@ -36,8 +36,7 @@ def send_email(to_email: str, subject: str, body: str,
     from_email = get_secret("SENDGRID_FROM_EMAIL", "alertas@flight-price-alert.dev")
 
     if not api_key:
-        logger.info("[EMAIL dry-run] Para: %s | Asunto: %s", to_email, subject)
-        logger.info("[EMAIL dry-run] Cuerpo:\n%s", body)
+        logger.info("[EMAIL dry-run] Para: %s | Asunto: %s", mask_contact(to_email), subject)
         return True, "dry-run"
 
     try:
@@ -58,10 +57,10 @@ def send_email(to_email: str, subject: str, body: str,
         ok = 200 <= response.status_code < 300
         detail = f"status={response.status_code}"
         if ok:
-            logger.info("Email enviado a %s (%s).", to_email, detail)
+            logger.info("Email enviado a %s (%s).", mask_contact(to_email), detail)
         else:
-            logger.warning("SendGrid respondio %s para %s.", detail, to_email)
+            logger.warning("SendGrid respondio %s para %s.", detail, mask_contact(to_email))
         return ok, detail
     except Exception as exc:
-        logger.error("Error enviando email a %s: %s", to_email, exc)
+        logger.error("Error enviando email a %s: %s", mask_contact(to_email), exc)
         return False, str(exc)

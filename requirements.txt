@@ -13,5 +13,8 @@ twilio>=9.0
 # --- HTTP (usado por el proveedor Duffel via REST) ---
 requests>=2.31
 
+# --- Graficos (historico de precios adjunto en notificaciones) ---
+matplotlib>=3.8
+
 # --- Proveedor Amadeus (opcional: descomenta si lo usas) ---
 # amadeus>=9.0

@@ -117,3 +117,46 @@ def get_cooldown_hours() -> int:
 def get_flight_provider() -> str:
     """Proveedor de vuelos activo: 'mock' (default), 'amadeus' o 'duffel'."""
     return (get_secret("FLIGHT_PROVIDER", "mock") or "mock").strip().lower()
+
+
+# ---------------------------------------------------------------------------
+# Acceso de administrador (paginas de Streamlit)
+# ---------------------------------------------------------------------------
+def require_admin_access(prompt: str = "Clave de acceso") -> None:
+    """
+    Protege el resto de la pagina de Streamlit con la clave ADMIN_PASSWORD.
+
+    Si la variable no esta configurada, no bloquea nada (modo demo, igual
+    que el comportamiento historico del Admin Dashboard). Si esta
+    configurada, pide la clave y corta la ejecucion de la pagina
+    (st.stop()) hasta que coincida. Unico mecanismo de clave admin del
+    proyecto: no crear una variable ni un flujo de autenticacion distinto.
+    """
+    import streamlit as st  # import local: esta funcion solo se usa en paginas
+
+    admin_pass = get_secret("ADMIN_PASSWORD")
+    if not admin_pass:
+        return
+    entered = st.text_input(prompt, type="password")
+    if entered != admin_pass:
+        st.stop()
+
+
+# ---------------------------------------------------------------------------
+# Enmascarado de datos personales para logs
+# ---------------------------------------------------------------------------
+def mask_contact(value: str | None) -> str:
+    """
+    Enmascara un email o telefono para que no quede PII legible en logs.
+
+    Email: 'daniel@dominio.com' -> 'da***@dominio.com'.
+    Telefono/otros: '+56981361946' -> '***1946' (ultimos 4 digitos visibles).
+    """
+    if not isinstance(value, str) or not value.strip():
+        return "-"
+    value = value.strip()
+    if "@" in value:
+        local, _, domain = value.partition("@")
+        visible = local[:2] if len(local) > 2 else local[:1]
+        return f"{visible}***@{domain}"
+    return f"***{value[-4:]}" if len(value) > 4 else "***"

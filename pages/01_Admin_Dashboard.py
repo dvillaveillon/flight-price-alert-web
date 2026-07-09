@@ -20,18 +20,14 @@ import streamlit as st
 from src.branding import BRAND_NAME, get_logo_local_path
 from src.database import Database
 from src.notifier_whatsapp import hours_since_last_join
-from src.utils import get_secret
+from src.utils import require_admin_access
 
 logo_path = get_logo_local_path()
 st.set_page_config(page_title=f"{BRAND_NAME} · Admin", page_icon=logo_path or "🐭", layout="wide")
 
 # --- Proteccion basica por clave (ADMIN_PASSWORD). Sin esta variable definida,
 # el panel queda abierto (comportamiento de modo demo). ---
-admin_pass = get_secret("ADMIN_PASSWORD")
-if admin_pass:
-    entered = st.text_input("Clave de acceso", type="password")
-    if entered != admin_pass:
-        st.stop()
+require_admin_access()
 
 st.caption(BRAND_NAME)
 st.title("📊 Panel de administracion")

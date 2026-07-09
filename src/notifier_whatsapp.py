@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from src.utils import get_logger, get_secret
+from src.utils import get_logger, get_secret, mask_contact
 
 logger = get_logger(__name__)
 
@@ -50,8 +50,7 @@ def send_whatsapp(to_number: str, body: str,
         return False, "sin_numero_destino"
 
     if not (sid and token and from_number):
-        logger.info("[WHATSAPP dry-run] Para: %s | Media: %s", to_number, media_url or "-")
-        logger.info("[WHATSAPP dry-run] Cuerpo:\n%s", body)
+        logger.info("[WHATSAPP dry-run] Para: %s | Media: %s", mask_contact(to_number), media_url or "-")
         return True, "dry-run"
 
     try:
@@ -71,14 +70,14 @@ def send_whatsapp(to_number: str, body: str,
                 raise
             logger.warning(
                 "Fallo enviando WhatsApp con imagen a %s (%s). Reintentando solo texto.",
-                to_number, media_exc,
+                mask_contact(to_number), media_exc,
             )
             message = client.messages.create(from_=from_number, to=dest, body=body)
 
-        logger.info("WhatsApp enviado a %s (sid=%s).", to_number, message.sid)
+        logger.info("WhatsApp enviado a %s (sid=%s).", mask_contact(to_number), message.sid)
         return True, f"sid={message.sid}"
     except Exception as exc:
-        logger.error("Error enviando WhatsApp a %s: %s", to_number, exc)
+        logger.error("Error enviando WhatsApp a %s: %s", mask_contact(to_number), exc)
         return False, str(exc)
 
 

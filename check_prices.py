@@ -22,11 +22,12 @@ from datetime import datetime, timezone
 
 from src.alert_rules import build_message, evaluate
 from src.branding import BRAND_NAME, build_email_html, build_whatsapp_message, get_logo_url
+from src.chart_generator import generate_price_chart_png
 from src.database import Database
 from src.flight_api import get_best_offer
 from src.notifier_email import send_email
 from src.notifier_whatsapp import hours_since_last_join, send_whatsapp
-from src.utils import get_logger
+from src.utils import get_logger, mask_contact
 
 logger = get_logger("check_prices")
 
@@ -112,12 +113,23 @@ def process_alert(db: Database, alert: dict) -> None:
     message = build_message(alert, best)
     subject = f"{BRAND_NAME}: oportunidad de vuelo {alert.get('origin')} -> {alert.get('destination')}"
 
+    # 5.1) Grafico de historico de precios propio de esta alerta (si se puede
+    # generar y subir). Nunca frena el envio si algo falla aca.
+    chart_url = None
+    try:
+        history = db.get_price_history(alert_id)
+        png_bytes = generate_price_chart_png(alert, history)
+        if png_bytes:
+            chart_url = db.upload_chart(alert_id, png_bytes)
+    except Exception as exc:
+        logger.warning("No se pudo generar/subir el grafico de la alerta %s: %s", alert_id, exc)
+
     notified_any = False
 
     # 5a) Email (canal confiable).
     email = user.get("email")
     if email:
-        html_body = build_email_html(alert, best)
+        html_body = build_email_html(alert, best, chart_url=chart_url)
         ok, detail = send_email(email, subject, message, html_body=html_body)
         db.insert_notification(
             alert_id, "email", message,
@@ -125,11 +137,13 @@ def process_alert(db: Database, alert: dict) -> None:
         )
         notified_any = notified_any or ok
 
-    # 5b) WhatsApp (opcional; requiere join al sandbox de Twilio).
+    # 5b) WhatsApp (opcional; requiere join al sandbox de Twilio). Se manda
+    # el grafico de esta alerta como adjunto; si no hay grafico disponible,
+    # cae al logo de marca como antes.
     whatsapp = user.get("whatsapp")
     if whatsapp:
         whatsapp_text = build_whatsapp_message(alert, best)
-        ok, detail = send_whatsapp(whatsapp, whatsapp_text, media_url=get_logo_url())
+        ok, detail = send_whatsapp(whatsapp, whatsapp_text, media_url=chart_url or get_logo_url())
         db.insert_notification(
             alert_id, "whatsapp", whatsapp_text,
             "sent" if ok else "failed", decision.price,
@@ -167,7 +181,7 @@ def send_whatsapp_keepalive_reminders(db: Database) -> None:
         try:
             hours = hours_since_last_join(whatsapp)
         except Exception as exc:
-            logger.warning("Error consultando el ultimo join de %s: %s", whatsapp, exc)
+            logger.warning("Error consultando el ultimo join de %s: %s", mask_contact(whatsapp), exc)
             continue
 
         if hours is None or not (REMINDER_WINDOW_MIN_HOURS <= hours < REMINDER_WINDOW_MAX_HOURS):
@@ -196,7 +210,7 @@ def send_whatsapp_keepalive_reminders(db: Database) -> None:
         db.insert_notification(anchor_alert_id, "whatsapp_reminder", text,
                                "sent" if ok else "failed", None)
         logger.info("Recordatorio de reconexion WhatsApp a %s: ok=%s detail=%s",
-                    whatsapp, ok, detail)
+                    mask_contact(whatsapp), ok, detail)
 
 
 def main() -> None:

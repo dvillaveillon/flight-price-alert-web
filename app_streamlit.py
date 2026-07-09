@@ -33,6 +33,7 @@ from src.utils import (
     dates_are_coherent,
     get_logger,
     is_valid_email,
+    mask_contact,
 )
 
 logger = get_logger(__name__)
@@ -173,6 +174,13 @@ with st.form("alert_form", clear_on_submit=False):
         f"Precio maximo que estas dispuesto a pagar ({currency}) *",
         min_value=1.0, value=500.0, step=10.0,
     )
+    tramo_txt = "ida + vuelta combinadas" if has_return else "el vuelo de ida"
+    pasajeros_txt = (f"los {int(passengers)} pasajeros juntos"
+                     if passengers > 1 else "el pasajero")
+    st.caption(
+        f"💡 Este precio es el **TOTAL** del itinerario completo ({tramo_txt}) "
+        f"y para {pasajeros_txt}, no por tramo ni por persona."
+    )
 
     consent = st.checkbox(
         "Acepto recibir alertas por email y/o WhatsApp sobre esta busqueda. *"
@@ -268,10 +276,10 @@ if submitted:
                         media_url=get_logo_url(),
                     )
                     logger.info("Confirmacion WhatsApp a %s: ok=%s detail=%s",
-                                whatsapp.strip(), wa_ok, wa_detail)
+                                mask_contact(whatsapp.strip()), wa_ok, wa_detail)
                 except Exception as exc:
                     logger.error("Error enviando confirmacion WhatsApp a %s: %s",
-                                 whatsapp.strip(), exc)
+                                 mask_contact(whatsapp.strip()), exc)
                 st.caption("Si agregaste WhatsApp, revisa que te haya llegado "
                            "un mensaje de confirmacion (puede tardar unos segundos).")
 

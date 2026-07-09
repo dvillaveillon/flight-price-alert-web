@@ -15,9 +15,16 @@ import streamlit as st
 
 from src.branding import BRAND_NAME, get_logo_local_path
 from src.database import Database
+from src.utils import require_admin_access
 
 logo_path = get_logo_local_path()
 st.set_page_config(page_title=f"{BRAND_NAME} · Historico", page_icon=logo_path or "🐭", layout="wide")
+
+# --- Esta pagina expone nombre/email/WhatsApp y el historico de precios de
+# TODOS los usuarios: debe quedar detras de la misma clave que el Admin
+# Dashboard (ADMIN_PASSWORD). Sin esa variable configurada, queda abierta
+# (modo demo, igual que el resto del proyecto). ---
+require_admin_access()
 
 st.caption(BRAND_NAME)
 st.title("📈 Historico de precios")
@@ -95,6 +102,19 @@ c4.metric("Precio objetivo", f"{max_price:.0f}" if pd.notna(max_price) else "-")
 # --------------------------------------------------------------------------- #
 # Grafico (line chart nativo de Streamlit)
 # --------------------------------------------------------------------------- #
+return_date = selected_alert_row.get("return_date")
+is_round_trip = isinstance(return_date, str) and return_date.strip() not in ("", "nan", "None")
+
+if is_round_trip:
+    st.caption(
+        "📊 **Historico de precio total del viaje ida y vuelta.** "
+        "Este valor corresponde al precio total del itinerario seleccionado, "
+        "no a cada tramo por separado (Duffel entrega un unico precio para "
+        "todo el itinerario, no un precio de ida y otro de vuelta)."
+    )
+else:
+    st.caption("📊 Historico de precio del vuelo (solo ida).")
+
 chart_df = serie[["checked_at", "price"]].set_index("checked_at").rename(
     columns={"price": "Precio observado"}
 )

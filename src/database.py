@@ -315,3 +315,28 @@ class Database:
         if self.backend == "supabase":
             return self._client.table("notifications").select("*").execute().data or []
         return self._csv_read("notifications").to_dict("records")
+
+    # ------------------------------------------------------------------ #
+    # STORAGE (graficos de historico para notificaciones)
+    # ------------------------------------------------------------------ #
+    def upload_chart(self, alert_id: str, png_bytes: bytes) -> str | None:
+        """
+        Sube el grafico de historico de una alerta al bucket publico 'charts'
+        de Supabase Storage y devuelve su URL publica.
+
+        Solo funciona con el backend Supabase (no aplica en modo demo/CSV).
+        Nunca lanza excepcion: si el bucket no existe o falla la subida,
+        devuelve None y la notificacion sigue su curso sin imagen.
+        """
+        if self.backend != "supabase":
+            return None
+        try:
+            path = f"{alert_id}.png"
+            self._client.storage.from_("charts").upload(
+                path, png_bytes,
+                {"content-type": "image/png", "upsert": "true"},
+            )
+            return self._client.storage.from_("charts").get_public_url(path)
+        except Exception as exc:
+            logger.warning("No se pudo subir el grafico de la alerta %s: %s", alert_id, exc)
+            return None
