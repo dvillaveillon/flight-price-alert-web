@@ -39,8 +39,17 @@ st.caption("Vista operativa de alertas, precios y notificaciones.")
 
 db = Database()
 alerts = pd.DataFrame(db.get_all_alerts())
+users_df = pd.DataFrame(db.get_all_users())
 notifications = pd.DataFrame(db.get_notifications())
 prices = pd.DataFrame(db.get_price_history())
+
+# Alertas con los datos de contacto de quien las creo, para identificar de un
+# vistazo quien esta detras de cada fila (join por user_id).
+if not alerts.empty and not users_df.empty and "user_id" in alerts.columns:
+    contact_cols = users_df[["user_id", "name", "email", "whatsapp"]].rename(
+        columns={"name": "Nombre", "email": "Email", "whatsapp": "WhatsApp"}
+    )
+    alerts = alerts.merge(contact_cols, on="user_id", how="left")
 
 # --------------------------------------------------------------------------- #
 # KPIs
@@ -73,9 +82,9 @@ if alerts.empty:
     st.info("Aun no hay alertas. Crea una desde la pagina principal.")
 else:
     cols = [c for c in [
-        "alert_id", "origin", "destination", "departure_date", "return_date",
-        "max_price", "currency", "cabin", "status", "last_checked_at",
-        "last_notified_at",
+        "alert_id", "Nombre", "Email", "WhatsApp", "origin", "destination",
+        "departure_date", "return_date", "max_price", "currency", "cabin",
+        "status", "last_checked_at", "last_notified_at",
     ] if c in alerts.columns]
     st.dataframe(alerts[cols], use_container_width=True, hide_index=True)
 
@@ -83,12 +92,6 @@ else:
 # Usuarios con alertas activas y estado de conexion de WhatsApp
 # --------------------------------------------------------------------------- #
 st.subheader("Usuarios con alertas activas")
-
-
-def _get_all_users(db: Database) -> pd.DataFrame:
-    if db.backend == "supabase":
-        return pd.DataFrame(db._client.table("users").select("*").execute().data or [])
-    return db._csv_read("users")
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -110,7 +113,6 @@ def _whatsapp_status(whatsapp: str | None) -> str:
     return "🔴 Desconectado — pedir join"
 
 
-users_df = _get_all_users(db)
 active_only = alerts[alerts["status"] == "active"] if not alerts.empty else alerts
 
 if active_only.empty or users_df.empty:

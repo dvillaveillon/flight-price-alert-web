@@ -176,6 +176,12 @@ class Database:
         })
         return user_id
 
+    def get_all_users(self) -> list[dict[str, Any]]:
+        """Devuelve todos los usuarios (para paneles de administracion)."""
+        if self.backend == "supabase":
+            return self._client.table("users").select("*").execute().data or []
+        return self._csv_read("users").to_dict("records")
+
     # ------------------------------------------------------------------ #
     # ALERTS
     # ------------------------------------------------------------------ #

@@ -25,6 +25,7 @@ st.caption("Evolucion de precios observados por el sistema para cada alerta.")
 
 db = Database()
 alerts = pd.DataFrame(db.get_all_alerts())
+users_df = pd.DataFrame(db.get_all_users())
 prices = pd.DataFrame(db.get_price_history())
 
 if alerts.empty:
@@ -35,11 +36,22 @@ if prices.empty:
     st.info("Aun no hay precios registrados. Ejecuta el worker: `python check_prices.py`.")
     st.stop()
 
+# Contacto de quien creo cada alerta, para identificarla en el selector.
+if not users_df.empty and "user_id" in alerts.columns:
+    contact_cols = users_df[["user_id", "name", "email", "whatsapp"]].rename(
+        columns={"name": "Nombre", "email": "Email", "whatsapp": "WhatsApp"}
+    )
+    alerts = alerts.merge(contact_cols, on="user_id", how="left")
+
 # --------------------------------------------------------------------------- #
-# Selector de alerta (etiqueta legible: ruta + fecha)
+# Selector de alerta (etiqueta legible: quien la creo + ruta + fecha)
 # --------------------------------------------------------------------------- #
 def _label(row: pd.Series) -> str:
-    return (f"{row.get('origin')} -> {row.get('destination')} "
+    nombre = row.get("Nombre") or "Sin nombre"
+    email = row.get("Email") or "sin email"
+    whatsapp = row.get("WhatsApp") or "sin WhatsApp"
+    return (f"{nombre} · {email} · {whatsapp} — "
+            f"{row.get('origin')} -> {row.get('destination')} "
             f"| ida {row.get('departure_date')} "
             f"| max {row.get('max_price')} {row.get('currency')}")
 
@@ -48,6 +60,13 @@ label_to_id = dict(zip(alerts["label"], alerts["alert_id"]))
 
 selected_label = st.selectbox("Selecciona una alerta", list(label_to_id.keys()))
 selected_id = label_to_id[selected_label]
+
+selected_alert_row = alerts[alerts["alert_id"] == selected_id].iloc[0]
+st.caption(
+    f"👤 **{selected_alert_row.get('Nombre') or 'Sin nombre'}** &middot; "
+    f"{selected_alert_row.get('Email') or 'sin email'} &middot; "
+    f"{selected_alert_row.get('WhatsApp') or 'sin WhatsApp'}"
+)
 
 # --------------------------------------------------------------------------- #
 # Preparacion de la serie de tiempo
@@ -62,8 +81,7 @@ serie["price"] = pd.to_numeric(serie["price"], errors="coerce")
 serie = serie.dropna(subset=["checked_at", "price"]).sort_values("checked_at")
 
 # Precio objetivo de la alerta seleccionada (linea de referencia).
-alert_row = alerts[alerts["alert_id"] == selected_id].iloc[0]
-max_price = pd.to_numeric(alert_row.get("max_price"), errors="coerce")
+max_price = pd.to_numeric(selected_alert_row.get("max_price"), errors="coerce")
 
 # --------------------------------------------------------------------------- #
 # KPIs de la serie
