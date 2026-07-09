@@ -19,6 +19,8 @@ Requiere (solo en modo real):
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from src.utils import get_logger, get_secret
 
 logger = get_logger(__name__)
@@ -78,3 +80,30 @@ def send_whatsapp(to_number: str, body: str,
     except Exception as exc:
         logger.error("Error enviando WhatsApp a %s: %s", to_number, exc)
         return False, str(exc)
+
+
+def hours_since_last_join(whatsapp_number: str) -> float | None:
+    """
+    Consulta a Twilio cuantas horas pasaron desde el ultimo mensaje que este
+    numero le mando al sandbox (su "join" u otro mensaje entrante). Es la
+    forma de saber si la ventana de 24h de WhatsApp Business sigue abierta.
+
+    Devuelve None si nunca escribio, o si no hay credenciales configuradas.
+    """
+    sid = get_secret("TWILIO_ACCOUNT_SID")
+    token = get_secret("TWILIO_AUTH_TOKEN")
+    sandbox_from = get_secret("TWILIO_WHATSAPP_FROM")
+    if not (sid and token and sandbox_from and whatsapp_number):
+        return None
+
+    from twilio.rest import Client  # import perezoso
+
+    dest = whatsapp_number if whatsapp_number.startswith("whatsapp:") else f"whatsapp:{whatsapp_number}"
+    client = Client(sid, token)
+    msgs = client.messages.list(to=sandbox_from, from_=dest, limit=1)
+    if not msgs:
+        return None
+    last = msgs[0].date_created
+    if last.tzinfo is None:
+        last = last.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - last).total_seconds() / 3600

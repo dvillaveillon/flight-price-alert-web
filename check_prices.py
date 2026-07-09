@@ -25,8 +25,8 @@ from src.branding import BRAND_NAME, build_email_html, build_whatsapp_message, g
 from src.database import Database
 from src.flight_api import get_best_offer
 from src.notifier_email import send_email
-from src.notifier_whatsapp import send_whatsapp
-from src.utils import get_logger, get_secret
+from src.notifier_whatsapp import hours_since_last_join, send_whatsapp
+from src.utils import get_logger
 
 logger = get_logger("check_prices")
 
@@ -142,31 +142,6 @@ def process_alert(db: Database, alert: dict) -> None:
         logger.info("Alerta %s notificada correctamente.", alert_id)
 
 
-def _hours_since_last_whatsapp_join(whatsapp_number: str) -> float | None:
-    """
-    Consulta a Twilio cuantas horas pasaron desde el ultimo mensaje que este
-    numero le mando al sandbox (su "join" u otro mensaje entrante). Devuelve
-    None si nunca escribio, o si no hay credenciales de Twilio configuradas.
-    """
-    sid = get_secret("TWILIO_ACCOUNT_SID")
-    token = get_secret("TWILIO_AUTH_TOKEN")
-    sandbox_from = get_secret("TWILIO_WHATSAPP_FROM")
-    if not (sid and token and sandbox_from):
-        return None
-
-    from twilio.rest import Client  # import perezoso
-
-    dest = whatsapp_number if whatsapp_number.startswith("whatsapp:") else f"whatsapp:{whatsapp_number}"
-    client = Client(sid, token)
-    msgs = client.messages.list(to=sandbox_from, from_=dest, limit=1)
-    if not msgs:
-        return None
-    last = msgs[0].date_created
-    if last.tzinfo is None:
-        last = last.replace(tzinfo=timezone.utc)
-    return (datetime.now(timezone.utc) - last).total_seconds() / 3600
-
-
 def send_whatsapp_keepalive_reminders(db: Database) -> None:
     """
     A los usuarios con alertas activas y WhatsApp configurado, cuya ventana
@@ -190,7 +165,7 @@ def send_whatsapp_keepalive_reminders(db: Database) -> None:
     for user_id, user in users_by_id.items():
         whatsapp = user["whatsapp"]
         try:
-            hours = _hours_since_last_whatsapp_join(whatsapp)
+            hours = hours_since_last_join(whatsapp)
         except Exception as exc:
             logger.warning("Error consultando el ultimo join de %s: %s", whatsapp, exc)
             continue

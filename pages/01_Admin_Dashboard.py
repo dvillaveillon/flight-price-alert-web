@@ -19,6 +19,7 @@ import streamlit as st
 
 from src.branding import BRAND_NAME, get_logo_local_path
 from src.database import Database
+from src.notifier_whatsapp import hours_since_last_join
 from src.utils import get_secret
 
 logo_path = get_logo_local_path()
@@ -77,6 +78,71 @@ else:
         "last_notified_at",
     ] if c in alerts.columns]
     st.dataframe(alerts[cols], use_container_width=True, hide_index=True)
+
+# --------------------------------------------------------------------------- #
+# Usuarios con alertas activas y estado de conexion de WhatsApp
+# --------------------------------------------------------------------------- #
+st.subheader("Usuarios con alertas activas")
+
+
+def _get_all_users(db: Database) -> pd.DataFrame:
+    if db.backend == "supabase":
+        return pd.DataFrame(db._client.table("users").select("*").execute().data or [])
+    return db._csv_read("users")
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _cached_hours_since_join(whatsapp: str) -> float | None:
+    """Cachea la consulta a Twilio 5 minutos para no golpearlo en cada rerun."""
+    return hours_since_last_join(whatsapp)
+
+
+def _whatsapp_status(whatsapp: str | None) -> str:
+    if not isinstance(whatsapp, str) or not whatsapp.strip():
+        return "Sin WhatsApp"
+    hours = _cached_hours_since_join(whatsapp)
+    if hours is None:
+        return "⚠️ Nunca hizo join"
+    if hours < 18:
+        return "✅ Conectado"
+    if hours < 24:
+        return "🟡 Por vencer (<6h)"
+    return "🔴 Desconectado — pedir join"
+
+
+users_df = _get_all_users(db)
+active_only = alerts[alerts["status"] == "active"] if not alerts.empty else alerts
+
+if active_only.empty or users_df.empty:
+    st.info("Aun no hay usuarios con alertas activas.")
+else:
+    rows = []
+    for user_id, group in active_only.groupby("user_id"):
+        match = users_df[users_df["user_id"] == user_id]
+        if match.empty:
+            continue
+        u = match.iloc[0]
+        notified = (
+            group["last_notified_at"].astype(str).str.strip()
+            .replace({"nan": "", "None": ""}).ne("").any()
+        )
+        whatsapp_val = u.get("whatsapp")
+        whatsapp_val = whatsapp_val if isinstance(whatsapp_val, str) and whatsapp_val.strip() else None
+        rows.append({
+            "Nombre": u.get("name", ""),
+            "Email": u.get("email", ""),
+            "WhatsApp": whatsapp_val or "-",
+            "Alertas activas": len(group),
+            "¿Ya recibio alerta?": "Si" if notified else "No",
+            "Estado WhatsApp": _whatsapp_status(whatsapp_val),
+        })
+    users_table = pd.DataFrame(rows).sort_values("Nombre")
+    st.dataframe(users_table, use_container_width=True, hide_index=True)
+    st.caption(
+        "El estado de WhatsApp se consulta en vivo contra Twilio (se cachea 5 min). "
+        "'Desconectado' o 'Nunca hizo join' significa que hay que pedirle que mande "
+        "**join these-garden** al +1 415 523 8886 para seguir recibiendo alertas ahi."
+    )
 
 # --------------------------------------------------------------------------- #
 # Tabla de notificaciones
