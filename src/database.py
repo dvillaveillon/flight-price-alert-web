@@ -324,19 +324,34 @@ class Database:
         Sube el grafico de historico de una alerta al bucket publico 'charts'
         de Supabase Storage y devuelve su URL publica.
 
+        Usa la clave service_role (SUPABASE_SERVICE_KEY) en vez de la clave
+        publica: esta subida solo la hace el worker de confianza
+        (check_prices.py), nunca el usuario final, asi que evitamos
+        depender de policies publicas de escritura sobre storage.objects.
+
         Solo funciona con el backend Supabase (no aplica en modo demo/CSV).
-        Nunca lanza excepcion: si el bucket no existe o falla la subida,
-        devuelve None y la notificacion sigue su curso sin imagen.
+        Nunca lanza excepcion: si falta la clave, el bucket no existe o
+        falla la subida, devuelve None y la notificacion sigue su curso
+        sin imagen.
         """
         if self.backend != "supabase":
             return None
+
+        service_key = get_secret("SUPABASE_SERVICE_KEY")
+        if not service_key:
+            logger.warning("SUPABASE_SERVICE_KEY no configurada: no se puede subir el grafico.")
+            return None
+
         try:
+            from supabase import create_client  # import perezoso
+
+            storage_client = create_client(self.supabase_url, service_key)
             path = f"{alert_id}.png"
-            self._client.storage.from_("charts").upload(
+            storage_client.storage.from_("charts").upload(
                 path, png_bytes,
                 {"content-type": "image/png", "upsert": "true"},
             )
-            return self._client.storage.from_("charts").get_public_url(path)
+            return storage_client.storage.from_("charts").get_public_url(path)
         except Exception as exc:
             logger.warning("No se pudo subir el grafico de la alerta %s: %s", alert_id, exc)
             return None
