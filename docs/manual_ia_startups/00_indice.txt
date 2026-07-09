@@ -1,0 +1,114 @@
+================================================================================
+MANUAL PERSONAL: COMO CONSTRUIR STARTUPS CON IA
+Caso de estudio real: SomosRata (Flight Price Alert Web)
+================================================================================
+
+Autor de este manual: Daniel Villaveillon, con Claude (Anthropic) como
+copiloto tecnico durante todo el proceso.
+
+Fecha de construccion del proyecto: 4 al 9 de julio de 2026 (menos de una
+semana, de cero a producto en produccion con usuarios reales).
+
+--------------------------------------------------------------------------------
+QUE ES ESTE MANUAL
+--------------------------------------------------------------------------------
+
+Esto NO es documentacion tecnica del proyecto SomosRata (esa vive en
+docs/deployment_guide.md, docs/architecture.md y docs/data_model.md, dentro
+del propio repo). Esto es algo distinto: es tu manual personal de metodo.
+
+La diferencia importa. La documentacion tecnica de un proyecto explica COMO
+FUNCIONA el sistema. Este manual explica COMO SE CONSTRUYE un sistema asi,
+desde cero, usando IA como socio de trabajo, sin saber programar de antemano
+a nivel experto. Uno describe un producto. El otro describe un metodo. El
+metodo es reutilizable para el proximo proyecto, aunque el proyecto sea
+completamente distinto (no tiene que ser una web de vuelos, puede ser
+cualquier cosa). El producto SomosRata en si mismo, en cambio, quedara
+obsoleto o cambiara con el tiempo.
+
+Esta escrito para que dentro de uno o dos anos, cuando ya hayas olvidado los
+detalles especificos de julio de 2026, puedas abrir este archivo y volver a
+ejecutar el mismo proceso con un proyecto nuevo, sin tener que redescubrir
+todo desde cero.
+
+--------------------------------------------------------------------------------
+COMO ESTA ORGANIZADO
+--------------------------------------------------------------------------------
+
+Este manual esta dividido en 14 archivos de texto, numerados en el orden en
+que conviene leerlos la primera vez. Despues de la primera lectura, puedes
+usarlos como referencia suelta (por ejemplo, abrir solo el checklist antes de
+empezar un proyecto nuevo).
+
+  00_indice.txt                     -> este archivo.
+  01_introduccion.txt               -> que quisimos construir y por que.
+  02_idea_a_mvp.txt                 -> como transformar una idea en un MVP.
+  03_metodologia.txt                -> el flujo de trabajo completo, paso a paso.
+  04_prompt_engineering.txt         -> como hablarle a una IA para que te sirva.
+  05_arquitectura.txt               -> explicacion tecnica para principiantes.
+  06_claude_code.txt                -> como trabajamos especificamente con
+                                        Claude Code (el asistente que escribe
+                                        y ejecuta codigo, distinto de un chat
+                                        normal).
+  07_desarrollo_mvp_cronologico.txt -> la historia completa, dia a dia,
+                                        decision a decision.
+  08_errores.txt                    -> TODOS los errores que cometimos, con
+                                        causa raiz y solucion. La seccion mas
+                                        valiosa del manual.
+  09_skills.txt                     -> las habilidades que se entrenaron
+                                        construyendo este proyecto.
+  10_framework_reutilizable.txt     -> el metodo condensado en un framework
+                                        que puedes aplicar a cualquier idea
+                                        nueva.
+  11_checklist_200.txt              -> checklist gigante, mas de 200 puntos,
+                                        de "tengo una idea" a "tengo usuarios
+                                        reales".
+  12_filosofia.txt                  -> la forma de pensar detras de todo esto.
+  13_lecciones_finales.txt          -> que repetiria, que cambiaria, y que le
+                                        diria a alguien que hoy empieza.
+
+--------------------------------------------------------------------------------
+QUE ES SOMOSRATA, EN UNA FRASE
+--------------------------------------------------------------------------------
+
+Una web publica donde cualquier persona crea una "alerta de precio" para un
+vuelo (ruta, fechas, precio maximo que esta dispuesta a pagar), y un sistema
+automatizado revisa precios reales cada 6 horas y le avisa por email y/o
+WhatsApp cuando encuentra una oferta que cumple su condicion.
+
+Nombre: Somos-Rata (juego de palabras chileno: "ser rata" = ser tacano /
+cuidadoso con la plata). Eslogan: "Dinos tu precio. Nosotros te avisamos."
+
+Link publico en produccion: https://somosrata.streamlit.app/
+
+--------------------------------------------------------------------------------
+COMO LEER ESTE MANUAL SI TIENES POCO TIEMPO
+--------------------------------------------------------------------------------
+
+Si dentro de un ano abres esto con prisa porque ya tienes una idea nueva y
+quieres arrancar YA, el camino minimo es:
+
+  1. Lee 10_framework_reutilizable.txt completo (es el resumen accionable).
+  2. Ten 11_checklist_200.txt abierto en una pestana mientras trabajas.
+  3. Cuando algo salga mal (va a salir mal), busca en 08_errores.txt si ya
+     te paso algo parecido antes.
+  4. Si te trabas hablando con la IA (respuestas genericas, poco utiles),
+     relee 04_prompt_engineering.txt.
+
+Si tienes tiempo y quieres realmente interiorizar el metodo (recomendado la
+primera vez), leelo completo en orden, del 01 al 13.
+
+--------------------------------------------------------------------------------
+UNA ADVERTENCIA IMPORTANTE ANTES DE EMPEZAR
+--------------------------------------------------------------------------------
+
+Este manual describe COMO trabajamos, no un ritual magico. La IA (en este
+caso, Claude) no adivina lo que quieres: coopera con lo que tu le das. Cuanto
+mejor sea tu contexto, tus decisiones, y tu capacidad de detectar cuando algo
+esta mal, mejor sera el resultado. La IA es un multiplicador de tu criterio,
+no un reemplazo de tu criterio. Este manual te va a ensenar, sobre todo, a
+desarrollar ESE criterio: cuando confiar en lo que la IA propone, cuando
+pedirle que verifique en vez de asumir, y cuando eres tu quien tiene que
+tomar la decision final porque es tu producto y tu negocio.
+
+Sigue al archivo 01_introduccion.txt.

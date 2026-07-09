@@ -1,0 +1,541 @@
+================================================================================
+08. ERRORES QUE COMETIMOS (LA SECCION MAS IMPORTANTE DEL MANUAL)
+================================================================================
+
+Si solo vas a leer un capitulo de este manual antes de tu proximo proyecto,
+que sea este. Cada error de aca fue real, paso en produccion (algunos con
+usuarios reales esperando una respuesta), y cada uno enseña algo que se
+puede prevenir la proxima vez.
+
+Formato de cada error: QUE PASO -> POR QUE PASO (causa raiz) -> COMO SE
+DETECTO -> COMO SE CORRIGIO -> LA LECCION GENERALIZABLE.
+
+================================================================================
+ERRORES TECNICOS (BUGS DE CODIGO Y DE DATOS)
+================================================================================
+
+--------------------------------------------------------------------------------
+ERROR 1: NULL vs cadena vacia en Postgres (el primer bug de produccion)
+--------------------------------------------------------------------------------
+
+QUE PASO: la primerisima vez que se probo crear una alerta desde la web
+publica real (ya conectada a Supabase), el sistema respondio con un error
+tecnico feo: "invalid input syntax for type timestamp with time zone: ''''".
+
+POR QUE PASO (causa raiz): el codigo original fue diseñado para funcionar
+tanto con un backend simple de archivos CSV como con Postgres real (ver
+05_arquitectura.txt, patron Strategy). En CSV, una cadena de texto vacia
+("") es una forma perfectamente valida de decir "este campo no tiene
+valor todavia" (por ejemplo, "todavia no se ha revisado el precio de esta
+alerta ni una sola vez"). Pero Postgres es mucho mas estricto con los
+TIPOS de datos: una columna definida como "fecha y hora" NO acepta una
+cadena de texto vacia como valor valido, solo acepta una fecha real o el
+valor especial NULL (que significa "sin valor", de forma explicita y
+distinta a un texto vacio).
+
+COMO SE DETECTO: probando el flujo real en la web publica, no revisando el
+codigo de forma abstracta. El error solo aparecia al INTENTAR GUARDAR datos
+reales en la base de datos real; nunca habria aparecido revisando el
+codigo linea por linea sin ejecutarlo contra Postgres de verdad.
+
+COMO SE CORRIGIO: se agrego una funcion que, SOLO cuando el backend activo
+es Postgres/Supabase (no cuando es CSV), convierte cualquier cadena vacia a
+NULL antes de intentar guardar el registro.
+
+LA LECCION GENERALIZABLE: cuando tu sistema tiene que hablar con MAS DE UN
+tipo de almacenamiento (o mas en general, mas de un sistema externo con sus
+propias reglas), no asumas que un valor que es valido en un lado es valido
+en el otro. Los "valores vacios" (null, cadena vacia, cero, indefinido) son
+una fuente clasica de bugs sutiles precisamente porque cada sistema tiene
+su propia forma de representar "no hay dato aca", y mezclar esas
+convenciones sin traducir explicitamente entre ellas causa errores dificiles
+de anticipar sin probar contra el sistema real.
+
+--------------------------------------------------------------------------------
+ERROR 2: typo en el correo remitente de SendGrid
+--------------------------------------------------------------------------------
+
+QUE PASO: al intentar enviar el primer email real de prueba, SendGrid
+devolvio un error 403 (prohibido): "The from address does not match a
+verified Sender Identity".
+
+POR QUE PASO (causa raiz): un simple error de tipeo humano al escribir el
+correo remitente en el archivo de configuracion: "gmial.com" en vez de
+"gmail.com". El sistema no tenia forma de detectar esto automaticamente
+porque "gmial.com" es, gramaticalmente, un dominio de correo tan valido
+como cualquier otro (no es un error de FORMATO, es un error de CONTENIDO
+que solo un humano, o una verificacion contra la fuente real, puede
+detectar).
+
+COMO SE DETECTO: capturando el mensaje de error EXACTO y completo que
+devolvia la API de SendGrid (no solo "fallo el envio"), lo cual señalaba
+claramente cual era el problema real. Despues, se reviso el valor
+literalmente guardado en el archivo de configuracion, letra por letra, en
+vez de asumir que estaba bien escrito.
+
+COMO SE CORRIGIO: corregir el typo y volver a probar. El envio funciono al
+primer intento despues de la correccion.
+
+LA LECCION GENERALIZABLE: cuando algo falla, obten el mensaje de error
+COMPLETO Y EXACTO del sistema que fallo (no una interpretacion tuya de lo
+que "probablemente" dice), y usalo como punto de partida de la
+investigacion, en vez de empezar a probar arreglos al azar. Ademas: los
+datos escritos por humanos (direcciones de correo, nombres de dominio,
+claves) son una fuente de errores tontos pero frecuentes; cuando algo
+"deberia funcionar" y no funciona, vale la pena revisar el dato exacto,
+caracter por caracter, antes de sospechar de algo mas complejo.
+
+--------------------------------------------------------------------------------
+ERROR 3: pipe de PowerShell que rompia secrets con saltos de linea
+--------------------------------------------------------------------------------
+
+QUE PASO: al configurar varios secrets de GitHub Actions de una sola vez
+usando un script que los extraia de un archivo de configuracion y los
+enviaba mediante una tuberia de comandos (pipe) en la terminal, el
+resultado fue que el sistema, al usar esos secrets despues, fallaba con
+un error de "URL invalida" para un dato (la URL de Supabase) que
+visualmente SE VEIA correcta.
+
+POR QUE PASO (causa raiz): la forma en que se enviaron los valores (via
+"pipe" en la terminal, texto que pasa de un comando a otro) agregaba, de
+forma invisible, un salto de linea al final de cada valor. Ese caracter
+invisible convertia una URL valida en un texto tecnicamente distinto e
+invalido para el sistema que la consumia despues, aunque a simple vista,
+en cualquier pantalla, se veia identica a la URL correcta.
+
+COMO SE DETECTO: revisando el registro de actividad (logs) del sistema que
+fallaba, que mostraba explicitamente "No se pudo iniciar Supabase (Invalid
+URL)", en vez de asumir que el problema era otra cosa (por ejemplo, se
+podria haber sospechado erroneamente de la propia clave de Supabase, en
+vez del METODO usado para guardarla).
+
+COMO SE CORRIGIO: se cambio el metodo de configurar los secrets, pasando
+el valor de forma directa (sin la tuberia que agregaba el caracter
+invisible), y se volvio a probar, esta vez con exito.
+
+LA LECCION GENERALIZABLE: los caracteres invisibles (saltos de linea
+sobrantes, espacios al final, caracteres especiales que se ven casi
+identicos a otros normales) son una categoria de bug muy dificil de ver a
+simple vista, precisamente porque no se ven. Cuando un dato "se ve bien"
+pero el sistema lo rechaza, sospecha de caracteres invisibles, y verifica
+programaticamente la longitud exacta o el contenido exacto del dato (no
+solo mirandolo en pantalla).
+
+--------------------------------------------------------------------------------
+ERROR 4: comparar precios en distintas monedas sin conversion (el bug mas
+grave del proyecto)
+--------------------------------------------------------------------------------
+
+QUE PASO: usuarios reales crearon alertas en pesos chilenos (CLP), con
+valores como "500.000" o "2.000.000". El sistema, al revisar los precios
+reales (que el proveedor SIEMPRE devuelve en euros, sin importar que
+moneda pidiera el usuario), comparaba el numero crudo del precio en euros
+(por ejemplo, 700) contra el numero crudo del precio objetivo en pesos
+(por ejemplo, 700.000), y como 700 es matematicamente menor que 700.000,
+el sistema "creia" que el precio cumplia la condicion y estaba a punto de
+mandar notificaciones FALSAS a usuarios reales, con datos que no tenian
+ningun sentido real.
+
+POR QUE PASO (causa raiz): el sistema tenia un campo de "moneda" en el
+formulario (dandole al usuario a elegir entre USD, EUR, CLP), pero el
+proveedor de precios de vuelos, en el entorno de pruebas usado, SIEMPRE
+devuelve los precios en euros, sin importar que moneda se le pida (esto se
+verifico despues: la moneda de los precios que devuelve ese proveedor
+depende de una configuracion de la cuenta, fija desde su creacion, no de
+cada busqueda individual). El codigo de comparacion de precios nunca
+verificaba que la moneda del precio encontrado coincidiera con la moneda
+del precio objetivo del usuario: simplemente comparaba los NUMEROS, como
+si fueran siempre la misma unidad.
+
+COMO SE DETECTO: el propio fundador del proyecto, revisando los datos
+reales que estaban ingresando los usuarios, noto un patron sospechoso (un
+valor de "500" en pesos chilenos, para un vuelo internacional, es
+evidentemente un malentendido, no un precio real posible) y pregunto
+explicitamente: "¿el buscador esta tomando bien los valores en CLP, o solo
+deberia buscar en USD?". Esta pregunta disparo una investigacion que
+confirmo el problema, ANTES de que el proximo ciclo del worker (programado
+para correr en pocas horas) llegara a mandar las notificaciones falsas.
+
+COMO SE CORRIGIO: en dos partes. Primero, una correccion de EMERGENCIA:
+se pausaron manualmente, de inmediato, todas las alertas en riesgo (las
+que estaban en pesos chilenos con valores grandes, candidatas a disparar
+un falso positivo en la proxima revision programada), antes de arreglar el
+codigo, para evitar que el problema se manifestara mientras se trabajaba en
+la solucion definitiva. Segundo, una correccion DEFINITIVA en el codigo:
+se agrego una regla que compara la moneda de la oferta encontrada contra
+la moneda de la alerta, y si NO coinciden, el sistema NUNCA notifica (en
+vez de comparar numeros de unidades distintas como si fueran la misma
+cosa), incluso si eso significa que, temporalmente, algunas alertas
+"nunca" van a encontrar coincidencia hasta que se resuelva el soporte real
+de esa moneda.
+
+LA LECCION GENERALIZABLE (esta es, probablemente, la leccion tecnica mas
+importante de todo el proyecto): cuando compares dos numeros que
+representan una MEDIDA DEL MUNDO REAL (dinero, distancia, tiempo, peso),
+nunca asumas que estan en la misma unidad solo porque ambos son numeros.
+Verifica explicitamente la unidad antes de comparar, y si no coinciden, la
+opcion segura por defecto es NO actuar (no notificar, no ejecutar, no
+continuar), nunca actuar asumiendo que estan alineadas. Un falso positivo
+en un sistema que le habla directamente a usuarios reales (como una
+notificacion) es mucho mas costoso en confianza que "el sistema no hizo
+nada esta vez".
+
+--------------------------------------------------------------------------------
+ERROR 5: secrets que existen pero no llegan a donde hace falta
+(este patron se repitio TRES VECES, con tres causas tecnicas distintas)
+--------------------------------------------------------------------------------
+
+Este merece explicarse como una FAMILIA de errores, porque el sintoma fue
+identico las tres veces ("algo deberia funcionar segun el codigo, pero en
+la practica no pasa nada, sin ningun error visible"), pero la causa tecnica
+especifica fue distinta cada vez. Vale la pena estudiar las tres juntas
+porque el patron general es sumamente comun en cualquier sistema con
+multiples "ambientes" de ejecucion.
+
+  CASO A - WhatsApp de bienvenida nunca llegaba: se agrego una funcionalidad
+  en la propia web (Streamlit) para mandar un WhatsApp de bienvenida al
+  crear una alerta. El codigo estaba bien escrito y probado localmente. En
+  produccion, nunca llegaba nada, sin ningun error visible en pantalla para
+  el usuario. Causa raiz: las credenciales de Twilio (necesarias para
+  mandar WhatsApp) SI estaban configuradas en un lugar (los Secrets de
+  GitHub Actions, que usa el worker/cron), pero NUNCA se habian configurado
+  en OTRO lugar distinto (los Secrets de Streamlit Cloud, que usa la web
+  publica) porque, hasta ese momento, la web nunca habia necesitado mandar
+  WhatsApp directamente, solo el worker lo hacia. Al agregar esta nueva
+  funcionalidad a la web, nadie penso en que la web AHORA TAMBIEN
+  necesitaba esas credenciales en SU PROPIO lugar de configuracion.
+
+  CASO B - el logo no aparecia en el email, mostrando texto en su lugar:
+  el codigo tenia una logica correcta: "si hay una URL de logo configurada,
+  mostrar la imagen; si no, mostrar el texto de respaldo". En produccion,
+  siempre mostraba el texto de respaldo, nunca la imagen, aunque la URL del
+  logo SI estaba guardada como secret en el repositorio de GitHub. Causa
+  raiz, distinta a la del Caso A: GitHub Actions tiene DOS conceptos
+  relacionados pero distintos -"tener un secret guardado en el
+  repositorio" y "que ese secret se inyecte como variable disponible
+  durante la ejecucion de un flujo de trabajo especifico"-. El archivo que
+  define el flujo de trabajo del cron (un archivo de configuracion en
+  formato YAML) tiene una lista EXPLICITA de que secrets se inyectan como
+  variables durante esa ejecucion, y la variable del logo nunca se habia
+  agregado a esa lista, aunque el secret SI existia guardado en el
+  repositorio.
+
+  CASO C (relacionado, mencionado en 07_desarrollo_mvp_cronologico.txt):
+  la ventana de 24 horas de WhatsApp Business, que hace que un mensaje
+  falle si el ultimo mensaje del USUARIO al sistema fue hace mas de 24
+  horas -esto no es exactamente un bug de configuracion, sino una regla de
+  negocio del propio proveedor (WhatsApp/Meta) que no se conocia de
+  antemano, y que se descubrio investigando el codigo de error especifico
+  que devolvia Twilio (63016).
+
+COMO SE DETECTARON los casos A y B: en ambos casos, gracias a que un
+humano REVISO EL RESULTADO REAL (¿me llego el mensaje? ¿tiene la imagen?),
+no solo confio en que "el codigo no arrojo ningun error, entonces debe
+haber funcionado". Como se explica en 06_claude_code.txt (Nivel 5 de
+verificacion), esto fue clave: en ambos casos, el sistema tecnicamente "no
+fallaba" (no habia ningun error visible en los logs para el Caso B; para
+el Caso A, el codigo entraba en un modo de "simulacion sin credenciales"
+que tampoco arrojaba error, solo silenciosamente no hacia el envio real).
+
+COMO SE CORRIGIERON: agregando las variables faltantes en el lugar
+especifico que faltaba en cada caso (los Secrets de Streamlit para el
+Caso A; la lista explicita de variables inyectadas en el archivo YAML del
+workflow para el Caso B), y ADEMAS, en el Caso A, se agrego registro de
+actividad (logging) explicito del resultado del envio, para que la proxima
+vez que algo similar falle, quede un rastro visible en vez de fallar en
+silencio total.
+
+LA LECCION GENERALIZABLE (family completa): en cualquier sistema que corre
+en MAS DE UN LUGAR (tu computador local, un servidor de hosting web, un
+worker/cron en otro servicio), cada variable de configuracion nueva que
+agregues tiene que revisarse contra TODOS los lugares donde el codigo que
+la usa realmente se ejecuta, no solo el lugar mas obvio o el que probaste
+primero. Una buena practica preventiva: mantener una lista (aunque sea
+informal) de "que variable, en que lugares", y revisarla cada vez que se
+agrega una variable nueva o se agrega una funcionalidad nueva que usa una
+variable ya existente en un contexto donde antes no se usaba.
+
+--------------------------------------------------------------------------------
+ERROR 6: PowerShell corrompiendo caracteres con tilde en una tuberia
+--------------------------------------------------------------------------------
+
+QUE PASO: al correr una prueba automatizada que incluia el texto "São
+Paulo" (con tilde/dieresis), el resultado mostraba "S??o Paulo", y la
+prueba fallaba, sugiriendo (incorrectamente) que la logica de normalizacion
+de texto tenia un bug.
+
+POR QUE PASO (causa raiz): el problema NO estaba en el codigo de
+normalizacion de texto (que de hecho funcionaba correctamente), sino en
+COMO se estaba ejecutando la prueba: se uso una combinacion de comandos de
+terminal (leer un archivo y "pasarlo por tuberia" a otro programa) que, en
+el sistema operativo especifico usado, no preserva correctamente los
+caracteres especiales (como tildes) durante esa transferencia.
+
+COMO SE DETECTO: al ejecutar la MISMA prueba de una forma distinta
+(ejecutando el archivo directamente en vez de mediante la tuberia), el
+resultado fue correcto, lo cual aislo el problema al METODO de ejecucion,
+no al codigo bajo prueba.
+
+COMO SE CORRIGIO: cambiar la forma de ejecutar la prueba (ejecucion
+directa del archivo, con la configuracion de codificacion de texto
+correcta), sin tocar ni una linea del codigo real, porque el codigo real
+nunca tuvo el bug.
+
+LA LECCION GENERALIZABLE: cuando una prueba automatizada falla, la primera
+pregunta no deberia ser "¿que tiene mal mi codigo?", sino "¿estoy seguro de
+que el ENTORNO DE PRUEBA esta reproduciendo fielmente las condiciones
+reales?". Las herramientas de terminal, especialmente en Windows, pueden
+tener comportamientos de codificacion de texto distintos entre si (un
+"pipe" no es identico a ejecutar un archivo directamente), y confundir un
+problema de la herramienta de prueba con un problema del codigo real te
+hace perder tiempo arreglando algo que nunca estuvo roto.
+
+================================================================================
+ERRORES DE ARQUITECTURA Y DECISIONES DE PROVEEDOR
+================================================================================
+
+--------------------------------------------------------------------------------
+ERROR 7: apostar por un proveedor (Amadeus) sin verificar su continuidad
+--------------------------------------------------------------------------------
+
+QUE PASO: el codigo del proyecto, desde antes de esta conversacion, ya
+tenia una implementacion preparada especificamente para Amadeus como
+proveedor de precios de vuelos, siguiendo el plan original que
+mencionaba explicitamente "Amadeus (entorno test)" como el paso 5. Al
+llegar el momento de activarlo, se descubrio que el portal de registro
+gratuito estaba a dias de cerrarse permanentemente.
+
+POR QUE PASO (causa raiz, a nivel de proceso, no de codigo): no fue un
+error de programacion, fue un error de PLANIFICACION: se asumio que un
+proveedor externo (elegido en algun momento anterior a esta conversacion)
+seguiria disponible en las mismas condiciones, sin verificar su estado
+actual antes de comprometerse a usarlo en el momento de la implementacion
+real.
+
+COMO SE DETECTO: al intentar registrarse, en vez de encontrar el
+formulario esperado, aparecio un aviso explicito del propio proveedor
+anunciando el cierre del servicio, junto con un link de registro roto.
+
+COMO SE CORRIGIO: no se intento "salvar" la decision original a toda
+costa. Se evaluo una alternativa (Duffel) que YA tenia tambien una
+implementacion preparada en el codigo (gracias, de nuevo, al patron
+Strategy explicado en 05_arquitectura.txt), y se peguntas al usuario si
+prefiere insistir con Amadeus, cambiar a Duffel, o quedarse en modo
+simulado por ahora, dejando la decision final en manos del fundador con
+toda la informacion relevante sobre la mesa.
+
+LA LECCION GENERALIZABLE: antes de comprometerte fuertemente con un
+proveedor externo (sobre todo uno gratuito o de nivel "hobby"), verifica su
+estado ACTUAL, no confies en informacion o decisiones de hace semanas o
+meses. Los servicios gratuitos para desarrolladores, en particular,
+cambian sus condiciones o se discontinuan con mas frecuencia que los
+servicios de pago empresariales. Y cuando pase (va a pasar, tarde o
+temprano, con algun proveedor de tu stack), la respuesta correcta no es
+pelear para salvar la decision original, es evaluar rapido las
+alternativas y pivotar con la menor friccion posible -lo cual solo es
+facil si tu arquitectura ya estaba preparada para intercambiar proveedores
+(otra vez, el patron Strategy).
+
+--------------------------------------------------------------------------------
+ERROR 8: no revisar todas las paginas antes de compartir un link publico
+--------------------------------------------------------------------------------
+
+QUE PASO: cuando se estaba por invitar a las primeras personas externas a
+usar el producto, se identifico que el panel de administracion (que
+muestra estadisticas internas del sistema: cuantas alertas hay, cuantas
+notificaciones se mandaron, etc.) era accesible para CUALQUIERA que
+visitara el link publico y navegara hasta esa pagina, sin ninguna
+proteccion.
+
+POR QUE PASO (causa raiz): esta pagina se habia construido en una etapa
+temprana del proyecto (antes de esta conversacion), pensada como una
+herramienta de uso interno del propio equipo, en un momento en que el
+producto ni siquiera tenia un link publico compartido con nadie. Al pasar a
+produccion publica, nadie habia revisado explicitamente si ESA pagina en
+particular seguia siendo apropiada para dejar abierta.
+
+COMO SE DETECTO: mediante una revision explicita, antes de compartir el
+link ampliamente, con la pregunta "¿que le falta para poder compartir esto
+tranquilamente?" en vez de simplemente compartir el link y esperar que
+todo estuviera bien.
+
+COMO SE CORRIGIO: se activo una proteccion por clave para esa pagina
+especifica (el codigo ya tenia la logica lista, simplemente estaba
+desactivada/comentada) antes de invitar a nadie externo.
+
+LA LECCION GENERALIZABLE: cada vez que tu proyecto pase de "privado, solo
+yo lo uso" a "publico, cualquiera puede entrar", haz una revision
+explicita de TODAS las paginas o rutas de tu sistema (no solo la pagina
+principal que estas mostrando activamente), preguntando para cada una:
+"¿esta pagina deberia ser visible para un desconocido?". Las herramientas
+internas construidas en etapas tempranas de un proyecto, cuando "nadie mas
+que yo lo va a ver de todos modos", son el lugar mas probable donde este
+tipo de descuido ocurre.
+
+================================================================================
+ERRORES DE PRODUCTO, UX Y COMUNICACION CON USUARIOS
+================================================================================
+
+--------------------------------------------------------------------------------
+ERROR 9: pedir a los usuarios que hicieran algo en el orden incorrecto
+--------------------------------------------------------------------------------
+
+QUE PASO: el mensaje inicial que se compartio con los primeros testers no
+especificaba un ORDEN entre dos acciones necesarias (unirse al sandbox de
+WhatsApp, y crear la alerta en el formulario). Varios usuarios completaron
+el formulario primero y recien despues (o nunca) hicieron el paso de union
+al sandbox, lo cual, por la restriccion tecnica de la "ventana de 24
+horas" de WhatsApp (ver Error 5, Caso C), significaba que la confirmacion
+automatica de bienvenida les fallaba.
+
+POR QUE PASO (causa raiz): una suposicion implicita de que "el orden no
+deberia importar" para el usuario, cuando en realidad, por una restriccion
+tecnica del proveedor externo (no controlable por el propio proyecto), SI
+importaba mucho.
+
+COMO SE DETECTO: usuarios reales reportando que "no me llego nada" y
+cruzando esa informacion con los logs reales de Twilio para cada caso
+especifico.
+
+COMO SE CORRIGIO: se reescribio el mensaje de instrucciones para los
+testers, especificando EXPLICITAMENTE el orden correcto ("primero manda el
+join, espera a que se marque como enviado, RECIEN AHI completa el
+formulario"), con una explicacion honesta de que si se hace en el orden
+incorrecto "no pasa nada grave", solo hay que repetir el paso.
+
+LA LECCION GENERALIZABLE: cuando le pidas a un usuario que haga varios
+pasos, y el ORDEN de esos pasos importa por alguna restriccion tecnica
+(aunque sea de un proveedor externo, invisible para el usuario), dilo
+explicitamente y de forma directa, no asumas que es intuitivo. Los
+usuarios reales, sobre todo los primeros (que no tienen ningun contexto
+previo del sistema), van a hacer las cosas en CUALQUIER orden que les
+parezca natural a ellos, no necesariamente el que a ti te parece obvio.
+
+--------------------------------------------------------------------------------
+ERROR 10: limitar una funcionalidad sin conocer el contexto real de los
+usuarios
+--------------------------------------------------------------------------------
+
+QUE PASO: al descubrir el bug de monedas (Error 4), la primera reaccion
+tecnica fue restringir el formulario para que solo aceptara EUR (la unica
+moneda que el proveedor de datos realmente soporta en ese momento),
+eliminando CLP y USD del selector. Poco despues, el propio fundador pidio
+revertir esa decision, explicando que los primeros usuarios eran chilenos y
+pensar sus precios en euros no era natural para ellos.
+
+POR QUE PASO (causa raiz): una decision tecnicamente "correcta" (evitar
+mostrar opciones que no funcionan de verdad) se tomo sin suficiente
+contexto de NEGOCIO (quienes son realmente los usuarios y como piensan sus
+precios), lo cual la convirtio en una decision de producto equivocada,
+aunque tecnicamente prolija.
+
+COMO SE DETECTO: el propio fundador, al ver el cambio ya aplicado,
+identifico que no reflejaba la realidad de sus usuarios y lo señalo
+directamente.
+
+COMO SE CORRIGIO: se revirtio el limite (se volvieron a mostrar las 3
+monedas en el formulario), y se resolvio el problema de fondo (que solo
+EUR realmente encuentra coincidencias) por un camino distinto: comunicando
+la limitacion directamente a los usuarios afectados (con mensajes
+explicando la situacion y pidiendo que recrearan sus alertas en EUR),
+mientras la proteccion tecnica contra falsos positivos (Error 4) seguia
+activa de todos modos, como red de seguridad independientemente de que
+moneda apareciera en el formulario.
+
+LA LECCION GENERALIZABLE: una solucion tecnicamente prolija no siempre es
+la mejor decision de PRODUCTO. Antes de simplificar o restringir algo por
+razones tecnicas, pregunta (o preguntate) si conoces bien el contexto real
+de quienes van a usar eso. Cuando la respuesta tecnica y la respuesta de
+negocio entran en tension, frecuentemente la solucion correcta no es
+elegir una sobre la otra, sino separar las dos preocupaciones: dejar la
+experiencia del usuario como corresponde a su contexto real, y resolver la
+limitacion tecnica por un camino que no la sienta directamente (en este
+caso, comunicacion directa en vez de restriccion de interfaz).
+
+--------------------------------------------------------------------------------
+ERROR 11: dar por sentado un dato sin verificarlo (el codigo de Castro)
+--------------------------------------------------------------------------------
+
+QUE PASO: al pedir ampliar el diccionario de ciudades, el propio fundador
+sugirio un codigo especifico para la ciudad de Castro (Chiloe, Chile): WCA.
+Ese codigo, aunque real y valido como codigo de aeropuerto, corresponde a
+un aeropuerto (Gamboa) que ya no opera vuelos comerciales regulares; el
+aeropuerto realmente usado hoy por las aerolineas comerciales para esa
+ciudad es otro, con un codigo distinto (MHC, Mocopulli).
+
+POR QUE PASO (causa raiz): informacion desactualizada o incompleta en la
+fuente original de ese dato especifico (el propio fundador, de memoria).
+No es un error de "mala fe" ni de descuido grave: es exactamente el tipo
+de error facil de cometer con datos de nicho, que cambian con el tiempo
+(el aeropuerto Mocopulli reemplazo a Gamboa para vuelos comerciales hace
+relativamente pocos anos), y que nadie revisa activamente salvo que algo
+lo obligue.
+
+COMO SE DETECTO: porque se aplico la instruccion explicita, dada de
+antemano por el propio fundador, de "verificar cada codigo IATA... si
+dudas de alguno, avisame en vez de inventarlo". Siguiendo esa instruccion,
+se investigo cada codigo propuesto contra fuentes externas independientes
+ANTES de escribirlo en el codigo, y esa investigacion revelo la
+discrepancia.
+
+COMO SE CORRIGIO: se uso el codigo correcto y vigente (MHC), explicando
+claramente al fundador por que se cambiaba respecto a lo que el mismo
+habia propuesto, en vez de aplicar su sugerencia original sin cuestionarla.
+
+LA LECCION GENERALIZABLE: para datos criticos (aquellos donde un valor
+incorrecto rompe silenciosamente una funcionalidad, sin generar ningun
+error visible), NO confies ciegamente ni en tu propia memoria ni en la
+memoria de una IA, aunque la fuente "suene segura de si misma". Pide
+explicitamente verificacion contra una fuente externa antes de comprometer
+el dato al codigo, especialmente cuando el dato es de un dominio de nicho
+(codigos de aeropuertos regionales, en este caso) donde la probabilidad de
+tener informacion desactualizada es mayor que para datos muy conocidos y
+estables (como el codigo de un aeropuerto internacional grande, que
+practicamente nunca cambia).
+
+================================================================================
+RESUMEN: LOS PATRONES QUE SE REPITEN EN CASI TODOS ESTOS ERRORES
+================================================================================
+
+Si agrupas los 11 errores de arriba, casi todos caen en un numero chico de
+PATRONES recurrentes, que vale la pena memorizar porque se van a repetir en
+tus proximos proyectos, aunque el detalle tecnico especifico sea distinto:
+
+  PATRON A - "El dato se ve bien pero no lo es" (Errores 2, 3, 6, 11):
+  typos, caracteres invisibles, codificacion de texto, datos desactualizados.
+  Prevencion: verificar programaticamente o contra una fuente externa, no
+  solo mirar a simple vista.
+
+  PATRON B - "Funciona en un contexto pero no en otro" (Errores 1, 5):
+  CSV vs Postgres, local vs Streamlit vs GitHub Actions.
+  Prevencion: probar contra el sistema REAL de destino, no solo en el
+  entorno de desarrollo; mantener explicita la lista de "que variable, en
+  que lugares".
+
+  PATRON C - "Comparar cosas que no son comparables" (Error 4): unidades
+  de medida distintas (monedas) tratadas como si fueran la misma cosa.
+  Prevencion: verificar la unidad/tipo antes de comparar, nunca asumir.
+
+  PATRON D - "Depender de algo externo sin verificar su continuidad"
+  (Error 7): un proveedor externo que cambia sus condiciones sin aviso.
+  Prevencion: verificar el estado actual antes de comprometerse fuerte;
+  disenar la arquitectura para poder cambiar de proveedor sin reescribir
+  todo.
+
+  PATRON E - "No revisar el sistema completo al cambiar su alcance"
+  (Error 8): pasar de privado a publico sin revisar TODAS las partes.
+  Prevencion: checklist explicito de seguridad antes de cada cambio de
+  alcance (mas gente, mas visibilidad, mas responsabilidad).
+
+  PATRON F - "Suponer que el usuario sabe algo que no sabe" (Error 9):
+  ordenes de pasos, contexto tecnico, no explicitados.
+  Prevencion: escribir instrucciones para el usuario de forma explicita,
+  sin asumir intuicion sobre restricciones tecnicas invisibles para el.
+
+  PATRON G - "Decision tecnica sin contexto de negocio" (Error 10):
+  la solucion "correcta" en el vacio no siempre es la correcta para TUS
+  usuarios reales.
+  Prevencion: antes de restringir/simplificar por razones tecnicas,
+  confirma que conoces bien el contexto real de quien va a usarlo.
+
+Continua en 09_skills.txt.

@@ -1,0 +1,183 @@
+================================================================================
+01. INTRODUCCION
+================================================================================
+
+--------------------------------------------------------------------------------
+1.1 QUE QUERIAMOS CONSTRUIR
+--------------------------------------------------------------------------------
+
+Queriamos construir una herramienta simple: una pagina web donde cualquier
+persona pudiera decir "quiero volar de Santiago a Madrid, en tal fecha, y no
+quiero pagar mas de tanto dinero", y que un sistema automatico se encargara
+de vigilar los precios reales del mercado y avisar quia el momento en que
+ese precio (o uno mejor) apareciera.
+
+En una frase: "Dinos tu precio. Nosotros te avisamos." Ese eslogan, que
+terminamos usando literalmente como marca, resume exactamente el contrato
+de valor del producto. No es un buscador de vuelos (existen decenas, como
+Skyscanner o Google Flights). Es un VIGILANTE de precios que trabaja para ti
+mientras haces otra cosa.
+
+--------------------------------------------------------------------------------
+1.2 POR QUE NACIO LA IDEA
+--------------------------------------------------------------------------------
+
+La idea nace de una friccion real y muy comun: cuando alguien quiere viajar,
+generalmente NO sabe el precio "correcto" de un vuelo. Entra a un buscador,
+ve un precio, no sabe si es caro o barato, y tiene dos opciones malas:
+
+  a) Comprar de inmediato por miedo a que suba (y quizas pagar de mas).
+  b) Esperar y revisar el precio manualmente todos los dias (perdiendo
+     tiempo, y con el riesgo de que el precio bueno aparezca un dia que uno
+     no revisa, y desaparezca antes de la proxima revision).
+
+Este patron de comportamiento -revisar manualmente un precio que cambia con
+el tiempo, con la esperanza de "cazar" el momento correcto- se repite en
+muchisimos dominios ademas de los vuelos: entradas a conciertos, dolar
+observado, precios de electrodomesticos en oferta, arriendos, criptomonedas,
+etc. Cuando un problema tiene esta forma ("un valor cambia en el tiempo y
+quiero que alguien lo vigile por mi y me avise"), es un buen candidato para
+automatizar con una alerta.
+
+--------------------------------------------------------------------------------
+1.3 CUAL ERA EL PROBLEMA (formulado de forma precisa)
+--------------------------------------------------------------------------------
+
+Es muy importante, antes de programar cualquier cosa, poder escribir el
+problema en UNA frase clara. Si no puedes hacer eso, todavia no tienes un
+problema bien definido, tienes una vaga inquietud.
+
+La formulacion que usamos fue:
+
+  "Las personas que quieren viajar no tienen tiempo ni ganas de revisar
+   precios de vuelos manualmente todos los dias, y por eso o compran caro
+   por ansiedad, o se pierden ofertas por falta de seguimiento."
+
+Nota la estructura de esta frase, porque es un patron reutilizable:
+
+  [QUIEN] + [QUE NECESITA O LE FALTA] + [QUE CONSECUENCIA NEGATIVA TIENE ESO]
+
+  QUIEN: personas que quieren viajar.
+  QUE LE FALTA: tiempo/ganas para revisar precios manualmente.
+  CONSECUENCIA: o pagan de mas por ansiedad, o pierden ofertas por no
+  hacerle seguimiento.
+
+Cuando puedas rellenar esta plantilla para tu proxima idea, ya tienes un
+problema formulado. Si no puedes, es senal de que necesitas investigar mas
+antes de construir nada.
+
+--------------------------------------------------------------------------------
+1.4 COMO VALIDAMOS QUE ERA UN PROBLEMA REAL
+--------------------------------------------------------------------------------
+
+Hay que ser honesto en este punto para que el manual sea util de verdad: en
+el caso de SomosRata, la validacion de "esto es un problema real" no fue un
+proceso formal de entrevistas de usuario ni encuestas de mercado (ese es el
+proceso IDEAL y lo vas a encontrar recomendado en el proximo archivo,
+02_idea_a_mvp.txt). Fue mas simple y mas rapido: es un problema que
+CUALQUIERA reconoce de inmediato al escucharlo ("si, a mi me ha pasado")
+porque es una experiencia casi universal de quien ha comprado pasajes
+aereos alguna vez.
+
+Esto es una validacion DEBIL pero SUFICIENTE para justificar construir un
+MVP rapido (dias, no meses) y ponerlo a prueba con personas reales. La
+validacion FUERTE (la que de verdad importa) vino DESPUES, cuando
+compartimos el link con un primer grupo de 15 personas reales (ver
+07_desarrollo_mvp_cronologico.txt) y observamos:
+
+  - Si de verdad creaban alertas (uso real, no solo curiosidad).
+  - Que dudas tenian (feedback cualitativo real).
+  - Que errores encontraban (que revela huecos en el producto).
+  - Si volvian a usarlo o no.
+
+La leccion aqui, y la vas a ver repetida en varias partes de este manual,
+es: NO esperes tener una validacion perfecta antes de construir. Para
+problemas que son evidentemente comunes (todo el mundo entiende el dolor en
+5 segundos), es mas eficiente construir un MVP barato y validar con uso
+real, que gastar semanas en investigacion de mercado formal. Esta
+regla NO aplica a todos los problemas: si tu problema es de un nicho muy
+especifico que tu mismo no vives, ahi si necesitas investigacion previa
+mas seria (entrevistas, encuestas) antes de construir, porque el riesgo de
+estar equivocado es mucho mayor.
+
+--------------------------------------------------------------------------------
+1.5 QUE APRENDIMOS ANTES DE ESCRIBIR UNA SOLA LINEA DE CODIGO
+--------------------------------------------------------------------------------
+
+Cuando la conversacion con Claude Code comenzo (la que da origen a este
+manual), el proyecto YA EXISTIA en un estado inicial: un MVP en modo demo,
+corriendo en local, con datos simulados ("mock") y guardado en archivos CSV
+en vez de una base de datos real. Es decir, el trabajo de diseño inicial
+(que campos pedir en el formulario, que logica de negocio aplicar, que
+arquitectura de codigo usar) ya se habia hecho ANTES de esta conversacion,
+probablemente en una sesion previa de trabajo con IA (Claude Chat, o una
+sesion anterior de Claude Code).
+
+Esto es un patron MUY IMPORTANTE que vale la pena nombrar explicitamente:
+
+  FASE 0 (offline, exploratoria, con Claude Chat o similar):
+    disenar el modelo de datos, la logica de negocio, la arquitectura del
+    codigo, en un entorno conversacional donde se puede iterar rapido sobre
+    IDEAS antes de comprometerse a ESCRIBIR codigo real.
+
+  FASE 1 (con Claude Code, en el proyecto real):
+    ya con un esqueleto de codigo funcionando en modo demo (sin
+    credenciales reales, con datos falsos), pasar a conectar TODO lo real:
+    base de datos en la nube, repositorio de codigo, hosting publico,
+    proveedor de emails, proveedor de precios de vuelos, WhatsApp.
+
+Esta conversacion documentada en este manual corresponde enteramente a la
+FASE 1: pasar de "funciona en mi computador con datos falsos" a "funciona en
+internet con datos reales y usuarios reales". Esa transicion -de demo local a
+producto en produccion- es el nucleo de lo que este manual te va a ensenar a
+repetir.
+
+Lo que ya sabiamos, sin haberlo programado nosotros mismos linea por linea,
+gracias a ese trabajo previo (evidenciado por el estado del codigo al
+empezar):
+
+  - Que el modelo de datos necesitaba 4 tablas: usuarios, alertas, historico
+    de precios, notificaciones (revisa docs/data_model.md dentro del propio
+    repo para el detalle exacto).
+  - Que la logica de negocio necesitaba dos reglas separadas: un umbral de
+    precio, y una ventana anti-spam (no notificar la misma alerta mas de
+    una vez cada cierta cantidad de horas).
+  - Que la arquitectura debia separar la web publica (donde la gente crea
+    alertas) del "worker" que revisa precios (un script independiente que
+    corre en un horario fijo, no cada vez que alguien visita la pagina).
+  - Que el sistema debia funcionar "en modo demo" sin ninguna credencial
+    real (para poder desarrollar y probar sin depender de servicios
+    externos ni gastar dinero), y pasar a "modo real" solo cambiando
+    variables de entorno, sin tener que reescribir codigo.
+
+Este ultimo punto -diseñar el sistema para que funcione en modo demo Y en
+modo real con el mismo codigo, solo cambiando configuracion- es una decision
+de arquitectura extremadamente valiosa que se explica en profundidad en
+05_arquitectura.txt. Es la razon por la cual pudimos avanzar tan rapido
+durante esta conversacion: nunca tuvimos que "convertir" el proyecto de demo
+a real, simplemente fuimos activando piezas reales una por una.
+
+--------------------------------------------------------------------------------
+1.6 QUE VAS A ENCONTRAR EN EL RESTO DEL MANUAL
+--------------------------------------------------------------------------------
+
+El resto de este manual documenta, con el maximo detalle posible, TODO lo
+que paso desde que se abrio esta conversacion (con un MVP funcionando en
+modo demo) hasta que el producto quedo:
+
+  - Desplegado publicamente en internet (Streamlit Community Cloud).
+  - Con una base de datos real en la nube (Supabase / PostgreSQL).
+  - Enviando emails reales (SendGrid).
+  - Buscando precios de vuelos reales (Duffel, tras descartar Amadeus).
+  - Enviando WhatsApp reales (Twilio Sandbox).
+  - Con identidad de marca propia (Somos-Rata: logo, colores, tono).
+  - Probado con 15+ usuarios reales, que generaron alertas de verdad.
+  - Con multiples bugs reales encontrados y corregidos en produccion,
+    mientras usuarios reales lo estaban usando.
+  - Con una funcionalidad nueva agregada a mitad del beta (buscar por
+    nombre de ciudad en vez de codigo IATA) en respuesta a feedback real.
+
+Todo esto en menos de una semana de trabajo. Ese ritmo no es casualidad: es
+el resultado directo de la metodologia que se explica en 03_metodologia.txt.
+
+Continua en 02_idea_a_mvp.txt.

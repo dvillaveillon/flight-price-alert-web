@@ -1,0 +1,258 @@
+================================================================================
+03. LA METODOLOGIA QUE SEGUIMOS
+================================================================================
+
+--------------------------------------------------------------------------------
+3.1 EL DIAGRAMA GENERAL
+--------------------------------------------------------------------------------
+
+  IDEA
+   |
+   v
+  INVESTIGACION (¿el problema es real? ¿que alternativas hay?)
+   |
+   v
+  BENCHMARK (¿que herramientas/proveedores existen para resolver cada
+             pieza tecnica? Base de datos, hosting, emails, pagos, etc.)
+   |
+   v
+  ARQUITECTURA (¿como se conectan las piezas? ¿que se guarda donde? ¿que
+                corre cuando?)
+   |
+   v
+  DISEÑO (¿que necesita ver/completar el usuario? ¿que tan simple puede
+          ser la primera version visual?)
+   |
+   v
+  PROMPT ENGINEERING (traducir lo anterior en instrucciones claras para
+                       la IA, en el orden correcto)
+   |
+   v
+  CLAUDE CHAT (fase exploratoria: iterar sobre IDEAS y DECISIONES de
+               diseño/arquitectura en modo conversacion, sin comprometerse
+               a escribir codigo real todavia)
+   |
+   v
+  CLAUDE CODE (fase de ejecucion: con el proyecto real abierto, escribir
+               codigo, ejecutar comandos, conectar servicios reales)
+   |
+   v
+  PROGRAMACION (las decisiones se convierten en archivos de codigo reales,
+                configuraciones, credenciales)
+   |
+   v
+  PRUEBAS (verificar que cada pieza conectada de verdad funciona, con
+           datos reales, no asumir que funciona porque el codigo "se ve
+           bien")
+   |
+   v
+  ERRORES (van a aparecer, siempre. La pregunta no es si van a aparecer
+           sino que tan rapido los detectas y entiendes la causa raiz)
+   |
+   v
+  CORRECCIONES (arreglar la causa raiz, no solo el sintoma; verificar de
+                nuevo despues de corregir)
+   |
+   v
+  DEPLOY (publicar la version corregida; en este proyecto, esto siempre
+          fue automatico: cada "git push" redesplegaba la web publica)
+   |
+   v
+  FEEDBACK (usuarios reales usando el producto, reportando dudas y
+            problemas)
+   |
+   v
+  NUEVA ITERACION  --------> (vuelve a IDEA, para la siguiente mejora)
+
+Este diagrama es un CICLO, no una linea recta. En la practica, durante esta
+conversacion, se recorrio el ciclo completo varias veces: una vez para cada
+proveedor conectado (Supabase, GitHub, Streamlit, SendGrid, Duffel,
+Twilio), una vez para el branding, y una vez para la funcionalidad de
+busqueda por ciudad. Cada vuelta al ciclo fue mas rapida que la anterior,
+porque el sistema ya tenia una base solida sobre la cual construir.
+
+--------------------------------------------------------------------------------
+3.2 CADA ETAPA EXPLICADA PARA PRINCIPIANTES
+--------------------------------------------------------------------------------
+
+IDEA
+  Ya cubierto en 02_idea_a_mvp.txt. Es el punto de partida: un problema
+  formulado en una frase.
+
+INVESTIGACION
+  Antes de construir, entender el contexto: ¿quien mas resuelve esto?
+  ¿como lo resuelven? ¿que le falta a esas soluciones? En SomosRata, esto
+  significo entender que existen buscadores de vuelos (Skyscanner, Google
+  Flights) pero ninguno hace "vigilancia pasiva con notificacion" de forma
+  simple y gratuita centrada en ESE flujo especifico.
+
+BENCHMARK
+  Comparar opciones tecnicas concretas para cada pieza que tu sistema
+  necesita. No se trata de elegir "la mejor tecnologia del mundo", se trata
+  de elegir la que resuelve tu necesidad especifica con el menor costo y
+  friccion. Ejemplos reales de esta conversacion:
+    - Para hosting de la web: se eligio Streamlit Community Cloud (gratis,
+      integrado con GitHub, ideal para un MVP en Python, sin necesitar
+      configurar servidores).
+    - Para base de datos: Supabase (Postgres gratis en la nube, con panel
+      visual, facil de usar sin ser experto en administracion de bases de
+      datos).
+    - Para precios de vuelos: se evaluo Amadeus primero (referenciado en
+      el codigo desde antes de esta conversacion), se descubrio que su
+      portal gratuito se estaba discontinuando, y se hizo un BENCHMARK EN
+      VIVO, durante la propia conversacion, comparando la alternativa
+      (Duffel) antes de decidir el cambio. Ver 08_errores.txt para el
+      detalle completo de este caso, es uno de los mas instructivos de
+      todo el proyecto.
+    - Para email: SendGrid (gratis hasta 100 emails/dia, suficiente para
+      un MVP en fase de prueba).
+    - Para WhatsApp: Twilio (unico proveedor con un "Sandbox" gratuito de
+      pruebas ampliamente documentado y accesible sin aprobacion previa de
+      Meta).
+
+ARQUITECTURA
+  Ver 05_arquitectura.txt para el detalle completo. La idea central: decidir
+  que piezas existen, que hace cada una, y COMO SE COMUNICAN entre si, antes
+  de escribir el codigo detallado de cada una.
+
+DISEÑO
+  En este proyecto, el diseño de interfaz fue deliberadamente minimalista
+  al principio (un formulario simple, sin identidad visual particular), y
+  se invirtio en una identidad de marca (Somos-Rata: logo, colores, tono)
+  recien DESPUES de tener el sistema funcionando tecnicamente de punta a
+  punta. Esto es intencional: el diseño visual es la parte MAS FACIL de
+  cambiar despues sin romper nada; la arquitectura y la logica de negocio
+  son las MAS DIFICILES de cambiar despues. Por eso se invierte tiempo en
+  la segunda antes que en la primera.
+
+PROMPT ENGINEERING
+  Se explica en detalle en 04_prompt_engineering.txt. Es la habilidad de
+  traducir una necesidad de negocio o tecnica en instrucciones que una IA
+  pueda ejecutar bien, con el contexto correcto y el nivel de detalle
+  correcto.
+
+CLAUDE CHAT vs CLAUDE CODE
+  Esta distincion se explica en profundidad en 06_claude_code.txt, pero la
+  version corta: Claude Chat es para EXPLORAR ideas, discutir arquitectura,
+  pedir explicaciones, sin que la IA toque tu proyecto real. Claude Code es
+  para EJECUTAR: tiene acceso directo a tus archivos, puede correr comandos
+  en tu terminal, instalar cosas, hacer commits, y de hecho hizo todo eso
+  durante esta conversacion (crear archivos, instalar Git y GitHub CLI,
+  correr pruebas, hacer despliegues).
+
+PROGRAMACION
+  El momento en que las decisiones se convierten en archivos reales. En
+  este proyecto, la mayoria del "programar" fue realizado directamente por
+  Claude Code bajo la direccion del usuario, quien tomaba las decisiones de
+  producto y aprobaba los cambios, sin necesariamente escribir el codigo
+  linea por linea el mismo. Esto es una forma legitima y cada vez mas
+  comun de "programar" en la era de la IA: dirigir en vez de teclear.
+
+PRUEBAS
+  Un patron que se repitio CONSTANTEMENTE en esta conversacion: despues de
+  cada cambio, antes de darlo por terminado, se verificaba con una prueba
+  real (no solo "revisar que el codigo se vea bien"). Ejemplos: enviar un
+  email de verdad y pedirle al usuario que confirme si llego; enviar un
+  WhatsApp de verdad; correr el proceso de revision de precios manualmente y
+  leer el resultado linea por linea; crear una alerta de prueba en la base
+  de datos real y despues borrarla. Esta disciplina de "verificar con la
+  cosa real, no asumir" es probablemente la practica individual mas
+  importante de toda la metodologia. Se profundiza en 08_errores.txt y en
+  09_skills.txt.
+
+ERRORES
+  Van a pasar. La actitud correcta no es evitarlos a toda costa (imposible),
+  sino: (a) detectarlos rapido, con pruebas reales; (b) diagnosticar la
+  CAUSA RAIZ, no solo el sintoma superficial; (c) corregir la causa, no
+  poner un parche que oculte el sintoma. Todo el capitulo 08_errores.txt
+  esta dedicado a esto porque es el capitulo mas valioso del manual.
+
+CORRECCIONES
+  Una vez identificada la causa, corregirla implica frecuentemente
+  entender BIEN por que paso, para que la correccion prevenga que vuelva a
+  pasar (no solo que arregle el caso puntual). Ejemplo real: cuando se
+  descubrio que WhatsApp fallaba en silencio por falta de credenciales en
+  Streamlit Secrets, la correccion no fue solo "agregar las credenciales
+  que faltaban", sino TAMBIEN agregar logging para que la proxima vez que
+  algo similar pase, quede un rastro visible en vez de fallar en silencio
+  otra vez.
+
+DEPLOY
+  En este proyecto, el despliegue fue automatico: cada vez que se hacia
+  "git push" al repositorio, Streamlit Community Cloud redesplegaba la web
+  publica sola, en 1-2 minutos, sin ninguna accion manual adicional. Esto
+  se llama "Continuous Deployment" (despliegue continuo) y es una de las
+  razones por las que se pudo iterar tan rapido: nunca hubo un paso manual
+  de "subir la version nueva", siempre fue automatico despues de guardar
+  el codigo en GitHub.
+
+FEEDBACK
+  Una vez que hubo usuarios reales usando el producto (ver
+  07_desarrollo_mvp_cronologico.txt), el feedback empezo a llegar en forma
+  de: preguntas por WhatsApp de los propios usuarios ("¿el precio debe ser
+  por persona o total?"), reportes de comportamiento raro ("no me llego la
+  confirmacion"), y observacion directa de los datos guardados en la base
+  de datos (revisar que alertas creaban, con que valores, para detectar
+  confusiones antes de que el usuario las reportara).
+
+NUEVA ITERACION
+  Cada vuelta del ciclo termina generando una nueva idea o mejora, que
+  vuelve a empezar el ciclo desde el principio, pero mas rapido, porque la
+  base ya existe. El ejemplo mas claro de esto en la conversacion es la
+  funcionalidad de "buscar por nombre de ciudad": nacio directamente de
+  feedback real de usuarios confundidos con codigos IATA, y paso por el
+  ciclo completo (investigacion tecnica de si el proveedor de datos lo
+  soportaba, diseño de la solucion, plan aprobado antes de programar,
+  implementacion, pruebas, deploy) en un tiempo mucho menor que las
+  integraciones originales, porque el resto del sistema ya estaba maduro.
+
+--------------------------------------------------------------------------------
+3.3 UNA VARIANTE IMPORTANTE: EL "MODO PLAN" ANTES DE PROGRAMAR
+--------------------------------------------------------------------------------
+
+En dos momentos especificos de esta conversacion (la funcionalidad de
+busqueda por ciudad, y la ampliacion del diccionario de ciudades), el
+usuario pidio EXPLICITAMENTE: "antes de tocar codigo, muestrame el plan".
+
+Esto activa un modo de trabajo distinto dentro del ciclo general: en vez de
+pasar directo de "prompt engineering" a "programacion", se inserta un paso
+intermedio de DISEÑO EXPLICITO Y APROBACION, donde la IA:
+
+  1. Explora el codigo existente para entender el contexto real (no asume).
+  2. Propone un plan detallado por escrito: que archivos va a tocar, que
+     funciones va a crear, que decisiones de diseño esta tomando y por que.
+  3. Si hay ambiguedades o decisiones con mas de una opcion razonable, las
+     pregunta explicitamente en vez de decidir solo.
+  4. Espera aprobacion explicita del humano antes de escribir una sola
+     linea de codigo.
+
+Esta practica es EXTREMADAMENTE recomendable para cualquier cambio de
+tamano medio o grande (mas de 2-3 archivos, o que involucre una decision de
+diseño no trivial). Para cambios chicos y obvios (arreglar un typo, agregar
+una linea a un diccionario), no hace falta este paso, se puede pedir
+directo. La regla practica: si al leer el pedido no tienes 100% claro COMO
+se deberia implementar sin ambiguedad, pide el plan primero.
+
+--------------------------------------------------------------------------------
+3.4 OTRA VARIANTE: VERIFICACION DE DATOS ANTES DE USARLOS
+--------------------------------------------------------------------------------
+
+Un patron que aparecio en la ampliacion del diccionario de ciudades (ver
+08_errores.txt y 07_desarrollo_mvp_cronologico.txt) merece mencion aparte:
+cuando el usuario le paso a la IA una lista de codigos IATA para agregar al
+sistema, y uno de esos codigos (WCA para Castro/Chiloe) resulto estar
+desactualizado (correspondia a un aeropuerto que ya no opera vuelos
+comerciales), la IA no lo agrego ciegamente: lo VERIFICO con busquedas
+independientes antes de escribirlo en el codigo, y encontro que el codigo
+correcto y vigente era otro (MHC).
+
+La leccion generalizable: cuando trabajas con datos que tienen un costo de
+estar mal (un codigo de aeropuerto incorrecto rompe la busqueda de vuelos
+para esa ciudad, silenciosamente, sin ningun error visible), pide
+explicitamente que se verifiquen contra una fuente antes de usarlos, en vez
+de confiar en la memoria de la IA o en tu propia memoria. "Prefiero que me
+preguntes por uno dudoso a que pongas uno incorrecto" fue literalmente la
+instruccion que se dio, y es una gran instruccion general para cualquier
+dato critico.
+
+Continua en 04_prompt_engineering.txt.

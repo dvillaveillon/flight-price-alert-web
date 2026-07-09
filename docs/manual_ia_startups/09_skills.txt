@@ -1,0 +1,221 @@
+================================================================================
+09. HABILIDADES (SKILLS) QUE SE ENTRENARON EN ESTE PROYECTO
+================================================================================
+
+Cada una de estas habilidades se practico de forma CONCRETA durante la
+construccion de SomosRata, no de forma teorica. Se explica que es, donde se
+uso, y como seguir entrenandola.
+
+--------------------------------------------------------------------------------
+[✔] PENSAR EN MVP
+--------------------------------------------------------------------------------
+Que es: la capacidad de distinguir "lo minimo necesario para que el
+producto resuelva el problema completo" de "todo lo que seria lindo
+tener". Se entreno constantemente al decidir que funcionalidades entraban
+en cada fase (ver 02_idea_a_mvp.txt) y al resistir la tentacion de
+construir cosas como conversion de monedas completa o migracion a WhatsApp
+Business antes de tener el producto basico funcionando con usuarios reales.
+Como seguir entrenandola: cada vez que se te ocurra una funcionalidad
+nueva, preguntate "¿el producto deja de resolver el problema central si
+esto no esta?" antes de agregarla al plan inmediato.
+
+--------------------------------------------------------------------------------
+[✔] PROMPT ENGINEERING (COMUNICACION EFECTIVA CON UNA IA)
+--------------------------------------------------------------------------------
+Que es: la habilidad de darle a una IA el contexto, la claridad y el nivel
+de detalle correctos para obtener resultados utiles a la primera, o casi.
+Se entreno en cada instruccion dada durante el proyecto, mejorando
+visiblemente entre el principio (instrucciones mas generales) y el final
+(instrucciones cada vez mas precisas, con contexto de negocio explicito,
+pidiendo planes antes de ejecucion en cambios grandes). Ver
+04_prompt_engineering.txt para el detalle completo.
+Como seguir entrenandola: revisa tus propios prompts despues de una
+conversacion; identifica en cuales tuviste que aclarar algo despues, y
+pregunta te por que esa informacion no estaba en el prompt original.
+
+--------------------------------------------------------------------------------
+[✔] ARQUITECTURA DE SOFTWARE (A NIVEL PRINCIPIANTE-INTERMEDIO)
+--------------------------------------------------------------------------------
+Que es: entender como se organizan las piezas de un sistema (frontend,
+backend, base de datos, worker, servicios externos) y por que se separan
+de la forma en que se separan. Se entreno al entender (no solo usar) el
+patron Strategy para proveedores intercambiables, la separacion entre web
+y worker, y el modelo de datos de 4 tablas relacionadas. Ver
+05_arquitectura.txt.
+Como seguir entrenandola: antes de tu proximo proyecto, dibuja (aunque sea
+a mano, en papel) el mapa de piezas como el de la seccion 5.1, ANTES de
+escribir codigo.
+
+--------------------------------------------------------------------------------
+[✔] UX Y COMUNICACION DE PRODUCTO
+--------------------------------------------------------------------------------
+Que es: pensar la experiencia desde el punto de vista de alguien que no
+tiene ningun contexto previo del sistema. Se entreno al escribir y
+reescribir varias veces las instrucciones para los primeros testers
+(el orden correcto de los pasos de WhatsApp, la aclaracion de la moneda),
+y al simplificar mensajes de bienvenida de marca (quitar texto redundante
+que la imagen ya comunicaba).
+Como seguir entrenandola: cada vez que escribas una instruccion para un
+usuario, leela como si NO supieras nada del sistema, y pregunta te "¿que
+me falta saber para hacer esto bien a la primera?".
+
+--------------------------------------------------------------------------------
+[✔] DEPLOY Y OPERACIONES (DEVOPS BASICO)
+--------------------------------------------------------------------------------
+Que es: llevar codigo desde tu computador hasta un sistema real que
+funciona en internet, de forma repetible y automatica. Se entreno
+configurando el despliegue continuo de Streamlit Cloud (cada push a
+GitHub redespliega solo), y el cron de GitHub Actions (revision automatica
+cada 6 horas, sin intervencion manual).
+Como seguir entrenandola: en tu proximo proyecto, intenta que el
+despliegue sea automatico desde el dia 1 (no manual), aunque el proyecto
+sea chico.
+
+--------------------------------------------------------------------------------
+[✔] GIT Y CONTROL DE VERSIONES
+--------------------------------------------------------------------------------
+Que es: usar Git para guardar el historial de cambios de tu codigo, con
+mensajes claros, de forma que puedas entender (o volver atras) cualquier
+cambio pasado. Se entreno instalando Git y GitHub CLI desde cero, y
+haciendo decenas de commits durante el proyecto, cada uno con un mensaje
+especifico que explica QUE cambio y (a veces) POR QUE.
+Como seguir entrenandola: nunca hagas un commit con mensaje generico como
+"cambios" o "fix". Practica escribir, en una linea, que cambio y por que
+alguien futuro (incluido tu mismo) necesitaria saberlo.
+
+--------------------------------------------------------------------------------
+[✔] TRABAJAR CON APIs Y SERVICIOS EXTERNOS
+--------------------------------------------------------------------------------
+Que es: conectar tu sistema a servicios de terceros (bases de datos,
+emails, mensajeria, datos de vuelos) mediante credenciales y llamadas
+programadas. Se entreno conectando CINCO servicios externos distintos
+(Supabase, GitHub, SendGrid, Duffel, Twilio), cada uno con su propio
+proceso de registro, credenciales, y particularidades (limites gratuitos,
+formatos de datos, restricciones de uso).
+Como seguir entrenandola: cada vez que conectes un servicio nuevo, lee
+(aunque sea por encima) su documentacion oficial sobre limites del plan
+gratuito y sobre el formato exacto de los datos que devuelve, antes de dar
+por sentado como funciona.
+
+--------------------------------------------------------------------------------
+[✔] TESTING (PROBAR ANTES DE CONFIAR)
+--------------------------------------------------------------------------------
+Que es: verificar que algo funciona de verdad, con datos y sistemas
+reales, en vez de asumir que funciona porque "el codigo se ve bien" o "no
+dio error". Se entreno en los 5 niveles de verificacion descritos en
+06_claude_code.txt, aplicados una y otra vez a lo largo de todo el
+proyecto: sintaxis, pruebas sueltas, pruebas contra el sistema real,
+pruebas del flujo completo, y confirmacion humana.
+Como seguir entrenandola: antes de dar un cambio por terminado, preguntate
+"¿lo probe con el sistema REAL, o solo revise que el codigo se viera
+correcto?".
+
+--------------------------------------------------------------------------------
+[✔] DEBUG (DIAGNOSTICAR LA CAUSA RAIZ, NO EL SINTOMA)
+--------------------------------------------------------------------------------
+Que es: cuando algo falla, encontrar POR QUE falla realmente, no solo
+hacer que el sintoma desaparezca. Se entreno intensamente en el capitulo
+08_errores.txt: cada uno de los 11 errores documentados alli involucro un
+proceso de investigacion (leer logs completos, revisar datos reales,
+probar hipotesis especificas) antes de aplicar una correccion.
+Como seguir entrenandola: la proxima vez que algo falle, resiste el
+impulso de aplicar el primer arreglo que se te ocurra. Primero, consigue
+el mensaje de error EXACTO y COMPLETO, y pregunta "¿por que pasa esto
+especificamente?" antes de "¿como lo arreglo?".
+
+--------------------------------------------------------------------------------
+[✔] DISEÑO DE PRODUCTO (BRANDING Y COMUNICACION VISUAL)
+--------------------------------------------------------------------------------
+Que es: darle a un producto tecnico una identidad reconocible y coherente
+(nombre, colores, tono, logo), y aplicarla de forma consistente en todos
+los canales donde el usuario interactua con el producto (web, email,
+WhatsApp). Se entreno construyendo la identidad "Somos-Rata" desde cero:
+paleta de colores centralizada en un solo lugar del codigo, aplicada
+consistentemente, con logica de respaldo cuando algun recurso (como el
+logo) no esta disponible.
+Como seguir entrenandola: cuando definas una identidad de marca, busca
+centralizarla en UN SOLO lugar del codigo (una funcion o modulo que
+devuelva los colores, el nombre, el logo), para que cambiarla despues no
+implique buscar y reemplazar en decenas de archivos distintos.
+
+--------------------------------------------------------------------------------
+[✔] ITERACION RAPIDA
+--------------------------------------------------------------------------------
+Que es: la capacidad de construir una version simple, probarla, recibir
+señal real (de un sistema o de una persona), y ajustar, en ciclos cortos,
+en vez de intentar anticipar la version "perfecta" sin haber probado nada
+todavia. Se entreno en practicamente cada funcionalidad del proyecto, mas
+visiblemente en el mensaje de bienvenida de WhatsApp (varias vueltas de
+ajuste) y en los mensajes de instrucciones para los testers (tres
+versiones sucesivas, cada una corrigiendo un problema real detectado en la
+version anterior).
+Como seguir entrenandola: en vez de pasar mucho tiempo puliendo algo antes
+de mostrarlo a alguien, muestralo en su version mas simple lo antes
+posible, y usa la reaccion real para decidir el siguiente ajuste.
+
+--------------------------------------------------------------------------------
+[✔] RECIBIR Y PROCESAR FEEDBACK
+--------------------------------------------------------------------------------
+Que es: escuchar lo que dicen (o lo que hacen, que a veces dice mas que
+las palabras) los usuarios reales, y convertir eso en cambios concretos al
+producto. Se entreno multiples veces: el feedback de "no se el codigo
+IATA" se convirtio en la funcionalidad de busqueda por ciudad; el feedback
+implicito de datos raros en la base de datos (alertas en 500 CLP para
+vuelos internacionales) revelo el bug de monedas antes de que se volviera
+un problema mas grave; las preguntas directas de usuarios ("¿el precio es
+por persona o total?") se resolvieron consultando el codigo real, no
+adivinando la respuesta.
+Como seguir entrenandola: cuando un usuario reporte algo, no te quedes solo
+con lo que dice en palabras -revisa tambien los DATOS que genero, muchas
+veces revelan mas que la queja misma.
+
+--------------------------------------------------------------------------------
+[✔] IA APLICADA A UN FLUJO DE TRABAJO REAL DE PRODUCTO
+--------------------------------------------------------------------------------
+Que es: la meta-habilidad que envuelve a todas las demas: saber cuando y
+como usar una IA como socio de trabajo dentro de un proceso real de
+construccion de producto, no solo para responder preguntas sueltas. Se
+entreno a lo largo de TODO el proyecto: usando la IA para explorar
+decisiones (arquitectura, benchmark de proveedores), para ejecutar tareas
+(escribir codigo, correr comandos, hacer pruebas reales), para investigar
+informacion externa verificable (documentacion de APIs, codigos de
+aeropuertos), y para producir entregables (este mismo manual).
+Como seguir entrenandola: en cada proyecto nuevo, identifica explicitamente
+en que fase estas (exploracion de ideas vs ejecucion tecnica, ver
+06_claude_code.txt) y elige la herramienta/modo de trabajo apropiado para
+esa fase.
+
+--------------------------------------------------------------------------------
+[✔] SEGURIDAD BASICA DE APLICACIONES
+--------------------------------------------------------------------------------
+Que es: entender los riesgos minimos de tener un producto publico en
+internet: no exponer credenciales en el codigo, no dejar paneles internos
+sin proteccion antes de compartir un link publico, entender la diferencia
+entre una clave "publica" (segura de usar en el propio backend) y una
+clave de "administrador" (mucho mas riesgosa si se filtra). Se entreno al
+excluir archivos de configuracion sensibles del control de versiones desde
+el primer commit, al elegir la clave de menor privilegio posible en
+Supabase, y al proteger el panel de administracion antes de invitar
+usuarios externos.
+Como seguir entrenandola: antes de compartir cualquier proyecto
+publicamente, haz una pasada explicita de seguridad: ¿hay credenciales en
+el codigo? ¿hay paginas sin proteccion que no deberian ser publicas? ¿que
+pasa si alguien malintencionado encuentra el link?
+
+--------------------------------------------------------------------------------
+[✔] GESTION DE RECURSOS Y LIMITES (PENSAR EN ESCALA, AUNQUE SEA CHICA)
+--------------------------------------------------------------------------------
+Que es: entender los limites de los servicios gratuitos que usas (cuantos
+emails por dia, cuanto credito de prueba, cuando se pausa una base de
+datos por inactividad) y tomar decisiones informadas sobre cuanta gente
+invitar a probar tu producto sin arriesgarte a quedarte sin servicio o a
+gastar dinero inesperadamente. Se entreno directamente al analizar, antes
+de invitar a los primeros testers, los limites especificos de cada uno de
+los cinco servicios usados, y llegar a un numero concreto y justificado de
+personas a invitar.
+Como seguir entrenandola: antes de compartir un proyecto con mas de un
+puñado de personas, revisa explicitamente los limites de CADA servicio
+gratuito que usas, no asumas que "total, son pocas personas, no deberia
+pasar nada".
+
+Continua en 10_framework_reutilizable.txt.

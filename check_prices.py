@@ -18,15 +18,40 @@ Se puede ejecutar directamente:  python check_prices.py
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from src.alert_rules import build_message, evaluate
 from src.branding import BRAND_NAME, build_email_html, build_whatsapp_message, get_logo_url
 from src.database import Database
 from src.flight_api import get_best_offer
 from src.notifier_email import send_email
 from src.notifier_whatsapp import send_whatsapp
-from src.utils import get_logger
+from src.utils import get_logger, get_secret
 
 logger = get_logger("check_prices")
+
+# Ventana en la que se manda el recordatorio de reconexion de WhatsApp: se
+# calcula sobre las horas transcurridas desde el ultimo mensaje que el
+# usuario le mando al sandbox de Twilio (su "join"). El sandbox corta la
+# posibilidad de mandarle mensajes 24h despues de eso, asi que el
+# recordatorio se manda ANTES de esa hora, mientras todavia se le puede
+# escribir. El ancho de la ventana (6h) coincide con la frecuencia del cron,
+# para garantizar que alguna corrida siempre caiga dentro.
+REMINDER_WINDOW_MIN_HOURS = 18
+REMINDER_WINDOW_MAX_HOURS = 24
+REMINDER_DEDUPE_HOURS = 20  # no reenviar si ya se mando uno hace menos de esto
+
+
+def _parse_dt(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except (ValueError, TypeError):
+        return None
 
 
 def _alert_to_params(alert: dict) -> dict:
@@ -117,6 +142,88 @@ def process_alert(db: Database, alert: dict) -> None:
         logger.info("Alerta %s notificada correctamente.", alert_id)
 
 
+def _hours_since_last_whatsapp_join(whatsapp_number: str) -> float | None:
+    """
+    Consulta a Twilio cuantas horas pasaron desde el ultimo mensaje que este
+    numero le mando al sandbox (su "join" u otro mensaje entrante). Devuelve
+    None si nunca escribio, o si no hay credenciales de Twilio configuradas.
+    """
+    sid = get_secret("TWILIO_ACCOUNT_SID")
+    token = get_secret("TWILIO_AUTH_TOKEN")
+    sandbox_from = get_secret("TWILIO_WHATSAPP_FROM")
+    if not (sid and token and sandbox_from):
+        return None
+
+    from twilio.rest import Client  # import perezoso
+
+    dest = whatsapp_number if whatsapp_number.startswith("whatsapp:") else f"whatsapp:{whatsapp_number}"
+    client = Client(sid, token)
+    msgs = client.messages.list(to=sandbox_from, from_=dest, limit=1)
+    if not msgs:
+        return None
+    last = msgs[0].date_created
+    if last.tzinfo is None:
+        last = last.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - last).total_seconds() / 3600
+
+
+def send_whatsapp_keepalive_reminders(db: Database) -> None:
+    """
+    A los usuarios con alertas activas y WhatsApp configurado, cuya ventana
+    de 24h con el sandbox de Twilio esta por cerrarse, se les manda un
+    recordatorio amistoso para que reenvien "join these-garden" y no se les
+    corten las alertas. Se manda mientras la ventana sigue abierta (por eso
+    llega a tiempo). Cualquier fallo aca no debe frenar el resto del cron.
+    """
+    alerts = db.get_active_alerts()
+    users_by_id: dict[str, dict] = {}
+    anchor_alert_by_user: dict[str, str] = {}
+    for alert in alerts:
+        user_id = alert.get("user_id")
+        if user_id in users_by_id:
+            continue
+        user = _lookup_user_contact(db, user_id)
+        if user.get("whatsapp"):
+            users_by_id[user_id] = user
+            anchor_alert_by_user[user_id] = alert.get("alert_id")
+
+    for user_id, user in users_by_id.items():
+        whatsapp = user["whatsapp"]
+        try:
+            hours = _hours_since_last_whatsapp_join(whatsapp)
+        except Exception as exc:
+            logger.warning("Error consultando el ultimo join de %s: %s", whatsapp, exc)
+            continue
+
+        if hours is None or not (REMINDER_WINDOW_MIN_HOURS <= hours < REMINDER_WINDOW_MAX_HOURS):
+            continue
+
+        anchor_alert_id = anchor_alert_by_user[user_id]
+        recent = (
+            db._client.table("notifications").select("sent_at")
+            .eq("alert_id", anchor_alert_id).eq("channel", "whatsapp_reminder")
+            .order("sent_at", desc=True).limit(1).execute().data
+        )
+        if recent:
+            last_reminder = _parse_dt(recent[0]["sent_at"])
+            if last_reminder and (datetime.now(timezone.utc) - last_reminder).total_seconds() / 3600 < REMINDER_DEDUPE_HOURS:
+                continue  # ya se le recordo hace poco, no insistir
+
+        text = (
+            f"🐭💬 Hola {(user.get('name') or '').strip() or 'de nuevo'}! Soy {BRAND_NAME}.\n\n"
+            "Tu conexion de WhatsApp con nuestro sandbox esta por vencer "
+            "(Twilio la corta cada 24 horas). Para seguir recibiendo tus "
+            "alertas aqui, manda de nuevo este mensaje al +1 415 523 8886:\n\n"
+            "join these-garden\n\n"
+            "Gracias por seguir con nosotros!"
+        )
+        ok, detail = send_whatsapp(whatsapp, text)
+        db.insert_notification(anchor_alert_id, "whatsapp_reminder", text,
+                               "sent" if ok else "failed", None)
+        logger.info("Recordatorio de reconexion WhatsApp a %s: ok=%s detail=%s",
+                    whatsapp, ok, detail)
+
+
 def main() -> None:
     """Punto de entrada del worker."""
     logger.info("=== Inicio de revision de precios ===")
@@ -132,6 +239,11 @@ def main() -> None:
         except Exception as exc:  # una alerta fallida no debe frenar el resto
             logger.error("Fallo procesando alerta %s: %s",
                          alert.get("alert_id"), exc)
+
+    try:
+        send_whatsapp_keepalive_reminders(db)
+    except Exception as exc:  # un fallo aca no debe invalidar la corrida
+        logger.error("Fallo enviando recordatorios de reconexion WhatsApp: %s", exc)
 
     logger.info("=== Fin de revision de precios ===")
 

@@ -1,0 +1,490 @@
+================================================================================
+11. CHECKLIST DEFINITIVO: DE "TENGO UNA IDEA" A "TENGO USUARIOS REALES"
+================================================================================
+
+Mas de 200 puntos, organizados por etapa. Uso sugerido: copia este archivo
+al arrancar un proyecto nuevo, y ve tachando. No todos los puntos aplican a
+todos los proyectos (algunos son especificos de un stack tipo SomosRata),
+pero la estructura general si es reutilizable.
+
+--------------------------------------------------------------------------------
+A. DESCUBRIMIENTO DEL PROBLEMA
+--------------------------------------------------------------------------------
+☐ 1. Puedo escribir el problema en una sola frase.
+☐ 2. La frase incluye QUIEN tiene el problema.
+☐ 3. La frase incluye QUE LE FALTA o que friccion vive.
+☐ 4. La frase incluye QUE CONSECUENCIA negativa tiene eso.
+☐ 5. Puedo explicar el problema a alguien en menos de 5 segundos.
+☐ 6. Se de donde viene la idea (frustracion propia, ajena, tarea manual
+     repetitiva, patron "vigilar y avisar", otro).
+☐ 7. Identifique si este problema me ha pasado a mi mismo mas de una vez.
+☐ 8. Identifique si he escuchado esta misma queja de mas de una persona,
+     sin que se conozcan entre si.
+☐ 9. Se que alternativas existen hoy para este problema.
+☐ 10. Puedo explicar por que esas alternativas no son suficientes.
+☐ 11. Identifique si mi propuesta cambia el MECANISMO (como se resuelve),
+      no solo los datos que muestra.
+☐ 12. Revise si este problema es de nicho muy especifico (necesita
+      validacion fuerte antes de construir) o evidente y comun (permite
+      validacion mas liviana).
+☐ 13. Anote la fecha en que formule el problema, para referencia futura.
+☐ 14. Comparti la formulacion del problema con alguien de confianza para
+      ver si "hace sentido" de inmediato.
+☐ 15. Descarte la idea si, al intentar formularla, no logro que tenga
+      sentido en una frase clara.
+
+--------------------------------------------------------------------------------
+B. VALIDACION
+--------------------------------------------------------------------------------
+☐ 16. Decidi el nivel de validacion necesario segun que tan evidente es
+      el problema (debil-suficiente vs fuerte).
+☐ 17. Si el problema es de nicho: identifique 5-10 personas reales con
+      quienes hablar antes de construir.
+☐ 18. Si hable con usuarios potenciales: pregunte como resuelven el
+      problema HOY, no si "usarian mi producto" (la gente tiende a decir
+      que si por cortesia a preguntas hipoteticas).
+☐ 19. Busque si existen productos similares ya en el mercado (benchmark
+      de validacion: si existen competidores, es señal de que el mercado
+      es real).
+☐ 20. Si no existen competidores en absoluto: investigue por que (puede
+      ser una oportunidad, o puede ser que el problema no sea real o no
+      sea rentable de resolver).
+☐ 21. Defini que señal real (no opinion) confirmaria que la idea vale la
+      pena (ej: gente crea el producto de prueba, gente vuelve a usarlo).
+☐ 22. Acepte que la validacion mas fuerte llega DESPUES de tener un MVP y
+      usuarios reales, no antes.
+☐ 23. Documente mis hipotesis de validacion por escrito, para poder
+      revisarlas despues con datos reales.
+☐ 24. Revise mi propio sesgo: ¿estoy validando de verdad, o buscando
+      confirmar lo que ya queria hacer?
+☐ 25. Defini un criterio de "esto no funciono" ademas de uno de exito
+      (para poder frenar a tiempo si la señal real no aparece).
+☐ 26. Si la idea paso la validacion inicial: pase a la definicion de MVP.
+☐ 27. Si la idea NO paso la validacion: la descarte o la reformule antes
+      de seguir.
+☐ 28. Revise si el problema tiene una version mas chica/simple que
+      podria validar mas rapido que la version completa.
+☐ 29. Identifique quien seria mi primer usuario real (una persona
+      concreta, no un perfil abstracto).
+☐ 30. Confirme que tengo forma de contactar a ese primer usuario cuando
+      el producto este listo.
+
+--------------------------------------------------------------------------------
+C. DEFINICION DE MVP
+--------------------------------------------------------------------------------
+☐ 31. Escribi la lista completa de TODO lo que se me ocurre que el
+      producto podria tener.
+☐ 32. Clasifique cada item en MVP / Deseable / Descartado.
+☐ 33. Para cada item de "MVP", verifique la pregunta "¿sin esto, el
+      producto deja de resolver el problema de punta a punta?".
+☐ 34. Confirme que mi lista de MVP no incluye login/cuentas de usuario "por
+      si acaso" sin necesidad real todavia.
+☐ 35. Confirme que mi lista de MVP no incluye soporte para multiples
+      proveedores de un mismo servicio "por si acaso".
+☐ 36. Confirme que mi lista de MVP no incluye un panel de administracion
+      elaborado antes de tener usuarios reales.
+☐ 37. Ordene los items del MVP por dependencia (que necesita a que).
+☐ 38. Dentro de cada nivel de dependencia, ordene por lo que reduce mas
+      incertidumbre primero.
+☐ 39. Defini el "camino feliz" completo del usuario (los pasos exactos
+      que sigue de principio a fin).
+☐ 40. Verifique que cada paso del camino feliz esta cubierto por algun
+      item de mi lista de MVP.
+☐ 41. Identifique la regla de negocio CENTRAL de mi producto (la logica
+      que hace que sea util, no decorativo).
+☐ 42. Escribi esa regla de negocio en una frase clara, verificable.
+☐ 43. Identifique si mi regla de negocio necesita alguna proteccion
+      "anti-spam" o similar (evitar que se repita de forma molesta).
+☐ 44. Revise mi lista de "Deseable" y confirme que de verdad puede
+      esperar a una version posterior.
+☐ 45. Revise mi lista de "Descartado" y confirme que no tiene relacion
+      directa con el problema central.
+
+--------------------------------------------------------------------------------
+D. ARQUITECTURA Y DISEÑO TECNICO
+--------------------------------------------------------------------------------
+☐ 46. Dibuje (aunque sea a mano) el mapa de piezas del sistema.
+☐ 47. Identifique cual es el "frontend" (lo que el usuario ve).
+☐ 48. Identifique cual es el "backend" (la logica que no ve el usuario).
+☐ 49. Decidi si necesito un "worker" separado (una tarea que corre en
+      segundo plano, en su propio horario, independiente de que alguien
+      este usando la app en ese momento).
+☐ 50. Si necesito un worker: decidi cada cuanto tiempo debe correr.
+☐ 51. Diseñe el modelo de datos: que "tablas" o entidades necesito.
+☐ 52. Para cada tabla, defini que campos necesita.
+☐ 53. Defini las relaciones entre tablas (que pertenece a que).
+☐ 54. Para cada servicio externo que voy a necesitar, aplique el patron
+      Strategy: una funcion generica con implementaciones intercambiables.
+☐ 55. Defini un "modo simulado" para cada servicio externo, que me
+      permita desarrollar sin credenciales reales.
+☐ 56. Confirme que el modo simulado y el modo real usan exactamente el
+      mismo contrato de datos (misma forma de entrada/salida).
+☐ 57. Decidi como se activa el modo real (tipicamente: presencia de
+      ciertas variables de entorno/configuracion).
+☐ 58. Identifique todos los servicios externos que voy a necesitar
+      (base de datos, hosting, email, datos de negocio, notificaciones
+      adicionales, pagos si aplica).
+☐ 59. Para cada servicio externo, hice un benchmark rapido de al menos 2
+      opciones antes de elegir.
+☐ 60. Elegi cada servicio externo priorizando: costo (gratis para
+      empezar), simplicidad de integracion, y no "la mejor tecnologia
+      del mundo".
+☐ 61. Defini donde van a vivir las variables de entorno/credenciales en
+      CADA ambiente donde mi codigo corre (local, hosting, worker).
+☐ 62. Revise que mi arquitectura separe claramente "logica de negocio" de
+      "detalles de implementacion de un proveedor especifico".
+☐ 63. Identifique los puntos donde mi sistema podria fallar (servicio
+      externo caido, dato invalido, limite de cuota alcanzado).
+☐ 64. Para cada punto de fallo identificado, decidi que deberia pasar (
+      reintentar, avisar, degradar de forma segura).
+☐ 65. Revise si mi arquitectura evita "romper todo" si un solo servicio
+      externo falla (aislamiento de fallos).
+
+--------------------------------------------------------------------------------
+E. SETUP DE ENTORNO DE DESARROLLO
+--------------------------------------------------------------------------------
+☐ 66. Instale el lenguaje de programacion / runtime necesario.
+☐ 67. Instale Git.
+☐ 68. Configure mi identidad de Git (nombre y correo).
+☐ 69. Instale las herramientas de linea de comandos de los servicios que
+      voy a usar (ej. GitHub CLI).
+☐ 70. Cree un archivo de dependencias (requirements.txt, package.json, u
+      equivalente segun mi stack).
+☐ 71. Verifique que puedo correr mi proyecto en modo simulado, sin
+      ninguna credencial real, desde el primer dia.
+☐ 72. Cree un archivo de ejemplo de variables de entorno (.env.example),
+      documentando que variables existen sin exponer valores reales.
+☐ 73. Cree mi archivo real de variables de entorno (.env), separado del
+      de ejemplo.
+☐ 74. Configure un archivo .gitignore ANTES del primer commit.
+☐ 75. Verifique que el .gitignore excluye mi archivo .env real y
+      cualquier archivo de credenciales.
+
+--------------------------------------------------------------------------------
+F. BASE DE DATOS
+--------------------------------------------------------------------------------
+☐ 76. Cree la cuenta en el proveedor de base de datos elegido.
+☐ 77. Cree el proyecto/instancia de base de datos.
+☐ 78. Escribi el codigo de definicion de tablas (DDL) correspondiente a
+      mi modelo de datos.
+☐ 79. Ejecute el DDL en el editor SQL del proveedor.
+☐ 80. Verifique visualmente que las tablas se crearon correctamente.
+☐ 81. Obtuve las credenciales de conexion (URL, clave de API).
+☐ 82. Decidi que nivel de clave usar (publica/anonima vs de
+      administrador), segun donde se va a usar esa clave.
+☐ 83. Guarde las credenciales en mi archivo .env local.
+☐ 84. Probe la conexion desde mi codigo, con un script simple, ANTES de
+      seguir avanzando.
+☐ 85. Probe insertar un registro de prueba real.
+☐ 86. Probe leer ese registro de vuelta.
+☐ 87. Borre el registro de prueba despues de confirmar que funciona.
+☐ 88. Verifique que mi codigo cambia automaticamente de modo simulado a
+      modo real solo por la presencia de las credenciales, sin cambios
+      de codigo adicionales.
+☐ 89. Revise los limites del plan gratuito (almacenamiento, pausas por
+      inactividad, limite de conexiones).
+☐ 90. Anote esos limites en algun lugar donde los pueda consultar despues.
+
+--------------------------------------------------------------------------------
+G. CONTROL DE VERSIONES / GITHUB
+--------------------------------------------------------------------------------
+☐ 91. Inicialice el repositorio Git localmente.
+☐ 92. Revise que archivos quedarian incluidos en el primer commit ANTES
+      de confirmarlo.
+☐ 93. Confirme que ninguna credencial real esta en los archivos a subir.
+☐ 94. Hice el primer commit, con un mensaje claro.
+☐ 95. Cree el repositorio remoto en GitHub.
+☐ 96. Decidi si el repositorio es publico o privado, y por que.
+☐ 97. Conecte el repositorio local con el remoto.
+☐ 98. Subi el primer commit al remoto (push).
+☐ 99. Verifique en la web de GitHub que el codigo subido es el correcto
+      y que no incluye archivos sensibles.
+☐ 100. Configure los permisos necesarios de mi token/CLI de GitHub para
+       las acciones que voy a necesitar (ej. workflows de automatizacion).
+☐ 101. Defini una convencion simple de mensajes de commit (que cambia, en
+       una linea clara) y la segui de forma consistente.
+☐ 102. Verifique que cada commit corresponde a un cambio ya PROBADO, no a
+       codigo sin verificar.
+
+--------------------------------------------------------------------------------
+H. DESPLIEGUE / HOSTING
+--------------------------------------------------------------------------------
+☐ 103. Elegi el servicio de hosting apropiado para mi stack tecnologico.
+☐ 104. Conecte el hosting con mi repositorio de GitHub.
+☐ 105. Si mi repo es privado: otorgue acceso SOLO a ese repositorio
+       especifico, no a toda mi cuenta.
+☐ 106. Configure las variables de entorno/secrets en el panel del
+       servicio de hosting (SEPARADO de mi .env local).
+☐ 107. Desplegue la aplicacion por primera vez.
+☐ 108. Verifique que el link publico carga sin pedir login ni mostrar
+       errores.
+☐ 109. Revise la configuracion de visibilidad (publica vs restringida) del
+       despliegue.
+☐ 110. Probe el "camino feliz" completo desde el link publico, no solo en
+       mi computador local.
+☐ 111. Confirme que cada nuevo "push" a GitHub redespliega automaticamente
+       la version publica (despliegue continuo).
+☐ 112. Guarde el link publico en un lugar accesible para compartir despues.
+☐ 113. Verifique el comportamiento en un navegador movil, no solo en
+       computador de escritorio.
+☐ 114. Revise los limites de recursos del plan gratuito de hosting.
+
+--------------------------------------------------------------------------------
+I. NOTIFICACIONES - EMAIL
+--------------------------------------------------------------------------------
+☐ 115. Cree la cuenta en el proveedor de email transaccional elegido.
+☐ 116. Verifique un remitente (correo o dominio, segun lo que necesite mi
+       volumen).
+☐ 117. Revise cuidadosamente, letra por letra, el correo remitente
+       configurado (fuente comun de errores de tipeo).
+☐ 118. Cree la clave de API con el permiso minimo necesario (ej. solo
+       "enviar correo", no permisos administrativos completos).
+☐ 119. Guarde la clave de API en mi .env local.
+☐ 120. Probe un envio real de prueba a mi propio correo.
+☐ 121. Revise mi bandeja de entrada (y spam) para confirmar la llegada.
+☐ 122. Si el correo cae en spam: entienda por que (remitente sin
+       autenticacion de dominio es la causa mas comun al principio).
+☐ 123. Configure las mismas credenciales en el lugar de configuracion del
+       worker/cron (si es un ambiente separado del hosting web).
+☐ 124. Verifique el limite diario/mensual del plan gratuito.
+☐ 125. Diseñe el contenido del email pensando en que se vea bien en
+       distintos clientes de correo (no solo el que tu usas).
+
+--------------------------------------------------------------------------------
+J. FUENTE DE DATOS EXTERNA / API DE NEGOCIO
+--------------------------------------------------------------------------------
+☐ 126. Identifique cual es LA fuente de datos externa central de mi
+       negocio (sin la cual el producto no tiene sentido).
+☐ 127. Verifique el ESTADO ACTUAL de ese proveedor (¿sigue activo? ¿su
+       registro sigue abierto? ¿cambio sus condiciones recientemente?)
+       ANTES de comprometerme fuertemente con el.
+☐ 128. Cree la cuenta en el entorno de pruebas/sandbox de ese proveedor.
+☐ 129. Genere las credenciales de prueba.
+☐ 130. Lei (aunque sea por encima) la documentacion sobre que formato de
+       datos devuelve.
+☐ 131. Verifique en que UNIDADES vienen los datos criticos (moneda,
+       medida, formato de fecha) y si eso es configurable o fijo.
+☐ 132. Probe una consulta real de ejemplo, y revise la respuesta completa,
+       no solo si "no dio error".
+☐ 133. Identifique si el proveedor tiene una alternativa/competidor por si
+       este falla o se discontinua.
+☐ 134. Confirme que mi arquitectura (patron Strategy) permite cambiar de
+       proveedor sin reescribir la logica de negocio.
+☐ 135. Configure las credenciales tambien en el ambiente del worker/cron.
+☐ 136. Verifique el limite de uso del entorno de pruebas.
+☐ 137. Documente cualquier limitacion conocida del entorno de pruebas
+       (datos ficticios, monedas fijas, rutas limitadas, etc.).
+
+--------------------------------------------------------------------------------
+K. CANAL SECUNDARIO DE NOTIFICACION (EJ. WHATSAPP/SMS)
+--------------------------------------------------------------------------------
+☐ 138. Evalue si un canal secundario de notificacion es realmente
+       necesario para el MVP, o puede esperar.
+☐ 139. Cree la cuenta en el proveedor elegido.
+☐ 140. Active el entorno de pruebas/sandbox correspondiente.
+☐ 141. Entendi las restricciones especificas del sandbox (ej. paso de
+       activacion manual requerido, ventanas de tiempo para responder).
+☐ 142. Documente esas restricciones en un lenguaje simple, pensando en
+       como se las voy a explicar a mis usuarios.
+☐ 143. Probe un envio real de prueba.
+☐ 144. Confirme la recepcion con una persona real, no solo revisando
+       logs.
+☐ 145. Configure las credenciales en TODOS los ambientes donde el codigo
+       que las usa realmente corre (web, worker, o ambos si ambos las
+       necesitan).
+☐ 146. Diseñe el mensaje de este canal pensando en que puede tener menos
+       espacio/formato que un email.
+☐ 147. Revise el costo real (credito de prueba, costo por mensaje) antes
+       de asumir que es gratis indefinidamente.
+
+--------------------------------------------------------------------------------
+L. SEGURIDAD ANTES DE COMPARTIR PUBLICAMENTE
+--------------------------------------------------------------------------------
+☐ 148. Liste TODAS las paginas/rutas de mi sistema, no solo la principal.
+☐ 149. Para cada pagina, pregunte "¿deberia ser visible para un
+       desconocido?".
+☐ 150. Proteja con clave o eliminie el acceso publico a cualquier panel
+       interno/administrativo.
+☐ 151. Confirme que ninguna credencial esta hardcodeada en el codigo.
+☐ 152. Confirme que mi .gitignore sigue excluyendo todos los archivos
+       sensibles.
+☐ 153. Revise que la clave de base de datos que uso desde mi backend es
+       la de MENOR privilegio necesario para funcionar.
+☐ 154. Si mi sistema pide datos personales al usuario (email, telefono,
+       nombre): incluya un texto de consentimiento explicito.
+☐ 155. Revise si necesito ademas activar seguridad a nivel de base de
+       datos (ej. Row Level Security), segun cuan expuesta este mi clave.
+☐ 156. Confirme que los mensajes de error que ve el usuario final no
+       exponen detalles tecnicos sensibles (rutas de archivos, stack
+       traces completos).
+☐ 157. Revise que no estoy haciendo scraping ni usando datos de forma no
+       autorizada por ningun proveedor externo.
+☐ 158. Verifique que mi repositorio (si es publico) no tiene commits
+       antiguos con credenciales expuestas en el historial.
+☐ 159. Defini un plan basico de "que hago si algo se filtra" (rotar
+       claves, revocar accesos).
+☐ 160. Revise los terminos de servicio de cada proveedor gratuito que uso,
+       para confirmar que mi uso planeado esta permitido.
+☐ 161. Confirme que tengo forma de desactivar o pausar el sistema
+       rapidamente si algo sale mal (un "boton de panico").
+☐ 162. Revise que el consentimiento y manejo de datos personales cumple,
+       al menos, con el sentido comun de privacidad (no comparto datos
+       de un usuario con otro sin necesidad).
+
+--------------------------------------------------------------------------------
+M. BRANDING E IDENTIDAD
+--------------------------------------------------------------------------------
+☐ 163. Confirme que el sistema tecnico funciona de punta a punta ANTES de
+       invertir tiempo en identidad visual.
+☐ 164. Defini el nombre del producto.
+☐ 165. Defini el eslogan o propuesta de valor en una frase.
+☐ 166. Defini una paleta de colores (nombrada, no solo "el azul que me
+       gusto").
+☐ 167. Obtuve o cree un logo.
+☐ 168. Centralice nombre, eslogan, colores y logo en UN SOLO lugar del
+       codigo (modulo/funcion de branding), no repetido en cada archivo.
+☐ 169. Apliaue la identidad en la interfaz principal (web/app).
+☐ 170. Aplique la identidad en las notificaciones por email (con una
+       version que funcione en distintos clientes de correo).
+☐ 171. Aplique la identidad en el canal secundario (WhatsApp/SMS) si
+       corresponde.
+☐ 172. Diseñe un comportamiento de respaldo (fallback) para cuando algun
+       recurso de marca (ej. el logo) no este disponible/configurado.
+☐ 173. Si necesito que un recurso de marca (logo) sea accesible desde
+       fuera (email, WhatsApp), y mi repositorio es privado: resolvi como
+       publicar SOLO ese recurso sin exponer el codigo completo.
+☐ 174. Probe la identidad de marca con datos/casos reales, no solo
+       revisando el diseño en abstracto.
+
+--------------------------------------------------------------------------------
+N. BETA CON USUARIOS REALES
+--------------------------------------------------------------------------------
+☐ 175. Calcule cuantas personas puedo invitar sin riesgo, revisando los
+       limites de CADA servicio gratuito que uso.
+☐ 176. Identifique cual es el limite mas restrictivo de todos (mi "cuello
+       de botella").
+☐ 177. Defini un numero concreto y justificado de personas para la
+       primera ronda.
+☐ 178. Escribi el mensaje de invitacion pensando en alguien sin NINGUN
+       contexto previo del producto.
+☐ 179. Si hay pasos con un ORDEN especifico que el usuario debe seguir:
+       los explicite claramente, sin asumir que es intuitivo.
+☐ 180. Explique claramente cualquier limitacion temporal conocida del
+       producto (ej. solo funciona en cierta moneda/region por ahora).
+☐ 181. Comparti el link con el primer grupo.
+☐ 182. Monitoree activamente los primeros usos (no espere pasivamente a
+       que reporten problemas).
+☐ 183. Revise los DATOS reales que se generaron, no solo las quejas
+       explicitas.
+☐ 184. Prepare un canal directo de comunicacion con los primeros testers
+       (WhatsApp, email) para resolver dudas rapido.
+☐ 185. Responde con precision tecnica cuando un usuario pregunte algo
+       sobre el funcionamiento (revisando el codigo real si hace falta,
+       no adivinando la respuesta).
+
+--------------------------------------------------------------------------------
+O. MONITOREO Y VERIFICACION CONTINUA
+--------------------------------------------------------------------------------
+☐ 186. Se donde ver los logs/actividad de cada servicio externo que uso.
+☐ 187. Se como forzar una ejecucion manual de mi worker/cron, sin esperar
+       el horario programado, para pruebas.
+☐ 188. Revise periodicamente el panel de actividad de mi proveedor de
+       email (entregado, rebotado, marcado como spam).
+☐ 189. Revise periodicamente el panel de actividad de mi proveedor de
+       mensajeria (WhatsApp/SMS).
+☐ 190. Confirme, con casos reales, que la logica anti-spam/anti-duplicados
+       de mi sistema funciona como espero.
+☐ 191. Establezca una rutina (aunque sea informal) de revisar el sistema
+       cada cierto tiempo mientras hay usuarios activos.
+☐ 192. Verifique que mi base de datos no esta por pausarse/suspenderse por
+       inactividad, si el plan gratuito tiene esa condicion.
+
+--------------------------------------------------------------------------------
+P. MANEJO DE ERRORES Y BUGS
+--------------------------------------------------------------------------------
+☐ 193. Cuando algo falle, obtuve el mensaje de error COMPLETO Y EXACTO
+       antes de intentar corregir nada.
+☐ 194. Investigue la CAUSA RAIZ, no solo aplique un arreglo al sintoma.
+☐ 195. Verifique si el mismo tipo de bug podria estar presente en otro
+       lugar similar del sistema (busque el patron, no solo el caso
+       puntual).
+☐ 196. Si el bug tenia riesgo de afectar a usuarios reales de inmediato:
+       tome una medida de contencion rapida (pausar, desactivar) antes de
+       la correccion definitiva.
+☐ 197. Probe la correccion contra un caso real que reproduzca el bug
+       original.
+☐ 198. Confirme que la correccion no rompio nada mas (prueba de
+       regresion: correr el flujo completo de nuevo).
+☐ 199. Agregue registro de actividad (logging) adicional si el bug era
+       dificil de detectar (fallaba en silencio).
+☐ 200. Documente el bug: que paso, causa raiz, como se corrigio.
+
+--------------------------------------------------------------------------------
+Q. DOCUMENTACION
+--------------------------------------------------------------------------------
+☐ 201. Mantengo un archivo de documentacion tecnica del proyecto, separado
+       del codigo.
+☐ 202. Actualizo esa documentacion A MEDIDA que pasan cosas relevantes, no
+       solo al final.
+☐ 203. Documento las variables de entorno necesarias y donde se
+       configuran (local, hosting, worker).
+☐ 204. Documento las decisiones de arquitectura importantes y el por que.
+☐ 205. Mantengo una seccion de "pendientes conocidos" (limitaciones
+       actuales, mejoras futuras).
+☐ 206. Mantengo una seccion de bugs encontrados y corregidos, como
+       registro historico util.
+
+--------------------------------------------------------------------------------
+R. ITERACION Y FEEDBACK
+--------------------------------------------------------------------------------
+☐ 207. Tengo un canal para recibir feedback de mis usuarios reales.
+☐ 208. Reviso el feedback buscando PATRONES (mas de una persona diciendo
+       lo mismo), no solo casos aislados.
+☐ 209. Para cada pieza de feedback fuerte, la paso de nuevo por el
+       proceso de definicion de MVP (¿es MVP-siguiente, deseable, o
+       descartable?).
+☐ 210. Para cambios de tamano medio/grande motivados por feedback, hago
+       un plan explicito antes de implementar.
+☐ 211. Verifico decisiones/datos sugeridos por usuarios (o por mi propia
+       memoria) contra una fuente externa antes de comprometerlos al
+       codigo, si son datos criticos.
+☐ 212. Pruebo cada mejora nueva end-to-end antes de darla por lista.
+☐ 213. Despliego la mejora y confirmo que el redespliegue fue exitoso.
+☐ 214. Comunico la mejora a los usuarios afectados si corresponde.
+
+--------------------------------------------------------------------------------
+S. PREPARACION PARA ESCALAR / MONETIZACION (MIRANDO ADELANTE)
+--------------------------------------------------------------------------------
+☐ 215. Identifique cuales de mis servicios gratuitos tienen un limite que
+       voy a alcanzar si el producto crece.
+☐ 216. Investigue el costo de pasar a un plan pago en cada uno de esos
+       servicios.
+☐ 217. Identifique que funcionalidades "Deseables" (pospuestas en la Fase
+       de MVP) tienen mas sentido de construir ahora que hay uso real.
+☐ 218. Revise si necesito mejorar la seguridad (ej. Row Level Security en
+       base de datos) antes de escalar el numero de usuarios.
+☐ 219. Revise si necesito migrar algun canal de "modo sandbox/prueba" a
+       "modo produccion aprobado" (ej. WhatsApp Business real en vez de
+       Sandbox).
+☐ 220. Piense en como authenticar mejor mis canales de notificacion (ej.
+       autenticacion de dominio de email) para mejorar entregabilidad a
+       mayor escala.
+☐ 221. Identifique metricas basicas que quiero empezar a trackear (uso,
+       retencion, conversion) antes de que el volumen sea tan grande que
+       sea dificil analizar manualmente.
+☐ 222. Piense en un modelo de monetizacion posible, sin necesariamente
+       implementarlo todavia.
+☐ 223. Revise que mi arquitectura (patron Strategy, separacion web/worker)
+       sigue siendo apropiada al nuevo volumen, o si necesita evolucionar.
+☐ 224. Considere si necesito ayuda humana adicional (soporte, moderacion)
+       a partir de cierto volumen de usuarios.
+☐ 225. Revise el feedback acumulado de todo el beta para decidir la
+       proxima gran prioridad de desarrollo.
+☐ 226. Celebre haber llegado hasta aca. Muy pocos proyectos llegan a tener
+       usuarios reales usando algo que construiste de principio a fin.
+
+--------------------------------------------------------------------------------
+TOTAL: 226 PUNTOS
+--------------------------------------------------------------------------------
+
+Continua en 12_filosofia.txt.

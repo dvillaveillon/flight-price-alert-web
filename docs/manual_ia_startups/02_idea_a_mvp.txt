@@ -1,0 +1,295 @@
+================================================================================
+02. COMO TRANSFORMAR UNA IDEA EN UN MVP
+================================================================================
+
+Este capitulo es teoria de producto, no especifico de SomosRata. Es el
+proceso mental que deberias seguir con CUALQUIER idea nueva, antes de
+abrir un editor de codigo. Se apoya en ejemplos de SomosRata para que no
+quede abstracto, pero la intencion es que lo apliques a otra idea distinta
+en el futuro.
+
+--------------------------------------------------------------------------------
+2.1 QUE ES UN MVP (Y QUE NO ES)
+--------------------------------------------------------------------------------
+
+MVP = Minimum Viable Product = Producto Minimo Viable.
+
+La palabra clave que casi todo el mundo malinterpreta es "Viable", no
+"Minimo". Un MVP no es "lo mas chico y feo que puedo construir". Un MVP es
+lo MINIMO que necesitas construir para que el producto sea VIABLE, es decir,
+que de verdad resuelva el problema para alguien de principio a fin, aunque
+sea de forma simple.
+
+Ejemplo con SomosRata: la version minima que resuelve el problema completo
+(no una version a medias) necesita, como minimo:
+
+  1. Un lugar donde el usuario diga que quiere (formulario).
+  2. Un lugar donde eso quede guardado (base de datos).
+  3. Un proceso que revise precios reales (no simulados) periodicamente.
+  4. Una forma de avisarle al usuario cuando corresponde (notificacion real).
+
+Si falta CUALQUIERA de esos 4 puntos, el producto no es viable: no resuelve
+el problema de punta a punta. Por ejemplo, una version que solo tiene el
+formulario pero nunca revisa precios reales, no es un MVP: es una demo. Una
+version que revisa precios pero nunca notifica a nadie tampoco es un MVP:
+es un script util solo para ti, no un producto.
+
+Pero notaras que esta lista de 4 puntos NO incluye, por ejemplo: cuentas de
+usuario con login, un dashboard bonito, soporte para 10 monedas distintas,
+recomendaciones con inteligencia artificial de "cuando comprar", o
+integracion con 5 proveedores de vuelos distintos. Todo eso seria valioso
+en una version 2.0, pero NINGUNO de esos puntos es necesario para que el
+producto sea viable la primera vez. Esa es la disciplina de un MVP: cada
+cosa que agregas, preguntate "si esto no estuviera, el producto dejaria de
+resolver el problema completo?". Si la respuesta es no, no es parte del MVP.
+
+--------------------------------------------------------------------------------
+2.2 COMO ENCONTRAR UN PROBLEMA
+--------------------------------------------------------------------------------
+
+Fuentes tipicas de buenos problemas, ordenadas de mas confiable a menos
+confiable:
+
+  1. TU PROPIA FRUSTRACION REPETIDA. Si a ti te ha pasado algo mas de una
+     vez y cada vez pensaste "esto deberia ser mas facil", ahi hay una
+     senal fuerte. Tienes la ventaja de que ya eres tu propio primer
+     usuario y entiendes el contexto sin tener que investigarlo.
+
+  2. FRUSTRACIONES QUE ESCUCHAS EN OTROS, REPETIDAS. Si mas de una persona,
+     sin conocerse entre si, se queja de lo mismo de forma independiente,
+     hay una senal de que el problema es comun, no un caso aislado tuyo.
+
+  3. TAREAS MANUALES Y REPETITIVAS QUE ALGUIEN HACE "A MANO". Cualquier
+     tarea que un humano hace de forma repetitiva y mecanica (revisar un
+     precio todos los dias, copiar datos de un lado a otro, generar el
+     mismo reporte cada semana) es candidata a automatizacion.
+
+  4. PATRONES "VIGILAR Y AVISAR". Como se explico en 01_introduccion.txt,
+     cualquier problema con la forma "un valor cambia en el tiempo y quiero
+     que alguien lo vigile por mi" es un patron de producto muy conocido y
+     replicable (alertas de precio, alertas de stock, alertas de tipo de
+     cambio, alertas de disponibilidad, etc.). SomosRata es una instancia
+     de este patron aplicado a vuelos.
+
+--------------------------------------------------------------------------------
+2.3 COMO VALIDAR SI VALE LA PENA RESOLVERLO
+--------------------------------------------------------------------------------
+
+Antes de construir, hazte estas preguntas (adaptadas del metodo real que
+seguimos, mas honesto sobre lo que SI hicimos y lo que es la version IDEAL
+del proceso):
+
+  PREGUNTA 1: Puedo explicar el problema en una frase que cualquiera
+  entienda en 5 segundos?
+    - Si la respuesta es si (como en SomosRata: "revisar precios de vuelos
+      manualmente es una lata y por eso la gente pierde ofertas o compra
+      caro"), es una buena senal: el problema es intuitivo, no necesitas
+      convencer a nadie de que existe.
+    - Si necesitas 3 parrafos para explicar por que es un problema, es una
+      señal de alerta: puede que el problema sea muy de nicho, o que en
+      realidad no sea un problema tan real, sino una solucion buscando un
+      problema.
+
+  PREGUNTA 2: Existen alternativas hoy, y por que no son suficientes?
+    - Para SomosRata: si, existen buscadores de vuelos (Google Flights,
+      Skyscanner). La diferencia es que ellos requieren que TU revises
+      manualmente; nuestra propuesta es que el sistema te avise a ti, sin
+      que tengas que volver a revisar. Es una diferencia de mecanismo
+      (push vs pull), no de datos.
+    - Si tu idea no tiene ninguna ventaja de mecanismo, forma o enfoque
+      distinto a lo que ya existe, es dificil justificar por que alguien
+      cambiaria de habito para usar tu producto.
+
+  PREGUNTA 3 (LA IDEAL, que en este proyecto se salto por velocidad):
+  ¿Puedo validar esto hablando con 5-10 personas reales ANTES de construir
+  nada, para confirmar que de verdad les pasa y que pagarian/usarian una
+  solucion?
+    - Esto es lo que un proceso de validacion "de manual de libro" te
+      recomendaria. En SomosRata NO se hizo asi: se construyo directo un
+      MVP funcional y se valido DESPUES, con el producto ya construido, en
+      un grupo de 15 personas reales.
+    - Esto funciono porque el problema es de validacion debil-suficiente
+      (ver 1.4 en 01_introduccion.txt): es un problema tan comun y facil de
+      entender que el riesgo de estar equivocado es bajo. Si tu problema es
+      mas de nicho o mas dudoso, SI deberias hacer esta validacion antes,
+      porque construir sin validar te expone a construir semanas de trabajo
+      para algo que a nadie le importa.
+
+--------------------------------------------------------------------------------
+2.4 COMO DEFINIR EL ALCANCE DE UN MVP (Y NO CONSTRUIR DE MAS)
+--------------------------------------------------------------------------------
+
+Tecnica practica: escribe la lista de TODO lo que se te ocurra que el
+producto podria tener. Despues, para cada item, clasifica en tres columnas:
+
+  COLUMNA A - "Sin esto, el producto no resuelve el problema de punta a
+  punta" (esto SI va en el MVP).
+
+  COLUMNA B - "Esto mejora la experiencia, pero el producto funciona sin
+  esto" (esto NO va en el MVP, se anota para despues).
+
+  COLUMNA C - "Esto es una idea interesante pero no tiene relacion directa
+  con el problema central" (se descarta, o se guarda muy lejos en el
+  backlog).
+
+Ejemplo real aplicado a SomosRata (reconstruido de lo que se ve en el
+codigo y las decisiones tomadas durante la conversacion):
+
+  COLUMNA A (SI, MVP):
+    - Formulario de alerta (ruta, fechas, precio maximo, contacto).
+    - Base de datos que guarde las alertas.
+    - Bot que revise precios reales periodicamente.
+    - Envio de notificacion (email como minimo, WhatsApp como plus).
+    - Logica anti-spam (no mandar la misma alerta notificada 10 veces en
+      un dia -esto SI es parte del MVP porque sin esto el producto se
+      siente roto/molesto, no es un capricho).
+
+  COLUMNA B (Deseable, no MVP, se agrego DESPUES en base a feedback real):
+    - Buscar por nombre de ciudad en vez de codigo IATA (esto se agrego
+      recien cuando usuarios reales del beta reportaron la friccion; ver
+      07_desarrollo_mvp_cronologico.txt). Es un ejemplo perfecto de algo
+      que NO estaba en el MVP original y que se agrego justificadamente
+      despues, con evidencia real de que hacia falta.
+    - Dashboard administrativo con KPIs (se incluyo, pero es una
+      herramienta interna, no parte del valor que recibe el usuario final).
+    - Identidad de marca completa (logo, colores, tono) -se hizo, pero
+      DESPUES de tener el producto funcionando tecnicamente. Primero
+      funciona, despues se ve bonito.
+
+  COLUMNA C (Descartado o pospuesto indefinidamente):
+    - Soporte multi-moneda real con conversion de divisas (se intento,
+      se encontro que el proveedor de datos no lo soporta facilmente en
+      este momento, y se decidio CONSCIENTEMENTE dejarlo pendiente en vez
+      de invertir tiempo en construir una solucion de conversion de
+      monedas casera. Ver 08_errores.txt, el caso del bug de moneda).
+    - Migracion a WhatsApp Business API (reconocido como mejora futura,
+      pero no bloqueante para tener usuarios reales probando el producto).
+    - Prediccion de precios con machine learning (mencionado en el README
+      original como "mejora futura", nunca se aborda en esta conversacion:
+      es Columna C tipica, una idea atractiva pero lejos del problema
+      central del MVP).
+
+--------------------------------------------------------------------------------
+2.5 COMO EVITAR CONSTRUIR DEMASIADO (EL ENEMIGO NUMERO UNO DE UN MVP)
+--------------------------------------------------------------------------------
+
+El riesgo mas comun al construir un MVP NO es que te quede muy simple. Es
+que te quede DEMASIADO COMPLEJO porque no supiste decir que no a tiempo.
+Sintomas de que te estas pasando de MVP:
+
+  - Estas construyendo un sistema de login/cuentas de usuario "por si
+    acaso", antes de saber si alguien va a usar el producto mas de una vez.
+  - Estas soportando 5 proveedores distintos de un mismo servicio (5
+    proveedores de email, 5 de pago) cuando con 1 alcanza para validar.
+  - Estas invirtiendo tiempo en un panel de administracion elaborado antes
+    de tener un solo usuario real.
+  - Estas bloqueado por una decision de arquitectura "perfecta" (que base
+    de datos, que framework) en vez de avanzar con la opcion mas simple que
+    funcione hoy.
+
+Contraejemplo real y muy concreto de SomosRata: el codigo tiene, desde el
+inicio, DOS formas de guardar datos (un backend de CSV local, y un backend
+de Supabase/Postgres en la nube), intercambiables con una sola variable de
+entorno, sin tocar el resto del codigo (ver 05_arquitectura.txt, seccion de
+"patron Strategy"). Esto suena como "sobre-ingenieria", pero en realidad es
+lo opuesto: fue la decision que permitio desarrollar y probar TODO el
+sistema sin depender de internet ni de una base de datos real desde el
+primer dia, y despues, cuando llego el momento de ir a produccion (esta
+misma conversacion), cambiar a la version real fue instantaneo, sin
+reescribir nada. La misma logica se aplico al proveedor de precios de
+vuelos (mock / Amadeus / Duffel, intercambiables) y a las notificaciones
+(dry-run automatico si no hay credenciales configuradas). Este es un
+patron de diseño que SI vale la pena adoptar desde el dia 1 en cualquier
+proyecto: separar "la logica de negocio" de "el proveedor externo
+especifico", para poder simular sin credenciales mientras desarrollas, y
+cambiar a real sin reescribir codigo.
+
+--------------------------------------------------------------------------------
+2.6 COMO PRIORIZAR
+--------------------------------------------------------------------------------
+
+Cuando tengas la lista de la Columna A (lo que SI es MVP), todavia hay que
+decidir el ORDEN en que se construye. La regla que se siguio, implicita en
+toda la conversacion, fue:
+
+  Prioriza en el orden en que una pieza DEPENDE de la anterior para tener
+  sentido, y dentro de eso, prioriza lo que reduce mas incertidumbre
+  primero.
+
+En la practica, el orden que se siguio en esta conversacion fue:
+
+  1. Base de datos real (Supabase) -sin esto, nada de lo demas puede
+     persistir datos reales.
+  2. Control de versiones y repositorio (GitHub) -sin esto, no hay forma
+     segura de desplegar ni de tener historial de cambios.
+  3. Despliegue publico (Streamlit Cloud) -sin esto, no hay "producto" que
+     mostrarle a nadie, solo codigo en tu computador.
+  4. Email real (SendGrid) -el canal de notificacion mas confiable y
+     universal (todo el mundo tiene email, no todo el mundo usa WhatsApp
+     de la misma forma).
+  5. Precios reales (proveedor de vuelos) -sin datos reales, las alertas
+     nunca podrian disparar de verdad; hasta este punto, el sistema era
+     "realista" pero no "real".
+  6. WhatsApp (Twilio) -canal adicional, mas complejo de configurar
+     (requiere que el usuario haga un paso extra), por eso se dejo al
+     final segun el plan original del usuario.
+  7. Identidad de marca (branding) -una vez que el sistema funciona de
+     punta a punta, se invierte en que se vea profesional.
+  8. Mejoras basadas en feedback real (buscar por ciudad) -solo despues de
+     tener usuarios reales usando el producto y reportando friccion real.
+
+Nota que el ORDEN prioriza "que funcione de punta a punta lo antes
+posible" por sobre "que se vea bonito" o "que tenga todas las
+funcionalidades". Esto es intencional: cuanto antes tengas un sistema
+end-to-end funcionando (aunque sea feo), antes puedes empezar a aprender
+cosas reales sobre tu producto.
+
+--------------------------------------------------------------------------------
+2.7 COMO PENSAR COMO FUNDADOR (NO COMO PROGRAMADOR)
+--------------------------------------------------------------------------------
+
+Esta es quizas la diferencia mas importante entre "hacer un proyecto de
+programacion" y "construir una startup", aunque el codigo escrito sea
+identico.
+
+Un programador pregunta: "¿Como implemento esto?"
+Un fundador pregunta primero: "¿Vale la pena implementar esto? ¿Que pasa si
+no lo hago? ¿Que estoy aprendiendo al hacerlo?"
+
+Ejemplos reales, tomados de decisiones que se tomaron durante esta
+conversacion, donde el pensamiento de fundador se impuso sobre el
+pensamiento puramente tecnico:
+
+  EJEMPLO 1 - Amadeus vs Duffel: cuando se descubrio que el portal
+  gratuito de Amadeus para desarrolladores estaba por cerrarse (ver
+  08_errores.txt), un pensamiento puramente tecnico habria dicho "hay que
+  arreglar el registro en Amadeus como sea". El pensamiento de fundador
+  pregunto: "¿realmente necesito ESE proveedor especifico, o necesito UN
+  proveedor de precios de vuelos que funcione? Existe otra opcion viable?"
+  Eso llevo a pivotar rapidamente a Duffel, sin perder mas tiempo peleando
+  con un servicio que se estaba discontinuando.
+
+  EJEMPLO 2 - Moneda CLP: cuando se descubrio que el proveedor de precios
+  solo devolvia EUR y no CLP, la solucion puramente tecnica "correcta"
+  habria sido construir un sistema de conversion de monedas en tiempo real
+  (con tasas de cambio actualizadas, etc.). La decision de fundador fue
+  distinta: limitar temporalmente el producto a EUR, comunicarlo con
+  claridad a los usuarios, y dejar la conversion real como mejora futura.
+  Esto prioriza "no mentirle al usuario con datos incorrectos" (que
+  destruye confianza) por sobre "tener la funcionalidad completa
+  inmediatamente".
+
+  EJEMPLO 3 - Compartir el link a cuantas personas: antes de invitar
+  publicamente a decenas de personas, se hizo la pregunta de fundador "¿mis
+  proveedores gratuitos aguantan esto sin romperse ni constarme dinero
+  inesperado?" antes de simplemente compartir el link sin pensarlo (ver
+  07_desarrollo_mvp_cronologico.txt, la conversacion sobre limites de
+  planes gratuitos).
+
+En resumen: pensar como fundador es preguntarse constantemente "¿por que
+estoy haciendo esto, y que pasa si no lo hago?", no solo "¿como lo hago
+tecnicamente?". La IA (Claude) puede ayudarte con el "como" casi siempre.
+El "por que" y el "vale la pena" siguen siendo, y deben seguir siendo,
+decisiones tuyas.
+
+Continua en 03_metodologia.txt.

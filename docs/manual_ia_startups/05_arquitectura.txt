@@ -1,0 +1,304 @@
+================================================================================
+05. ARQUITECTURA DEL PROYECTO (EXPLICADA PARA PRINCIPIANTES)
+================================================================================
+
+Este capitulo asume que no sabes que es un "backend" o un "hosting". Vamos a
+construir el vocabulario desde cero, usando SomosRata como ejemplo
+constante.
+
+--------------------------------------------------------------------------------
+5.1 EL MAPA GENERAL DEL SISTEMA
+--------------------------------------------------------------------------------
+
+  [PERSONA EN SU CELULAR]
+         |
+         | abre el link publico
+         v
+  +--------------------------+
+  |   WEB PUBLICA            |   <- "Frontend": lo que el usuario VE y toca.
+  |   (Streamlit)             |      Formulario para crear alertas.
+  +--------------------------+
+         |
+         | guarda la alerta
+         v
+  +--------------------------+
+  |   BASE DE DATOS          |   <- Donde vive TODA la informacion:
+  |   (Supabase / Postgres)  |      usuarios, alertas, precios, notificaciones.
+  +--------------------------+
+         ^
+         | lee alertas activas, revisa precios, guarda resultados
+         |
+  +--------------------------+
+  |   WORKER (cron)          |   <- Un programa que corre SOLO, cada 6 horas,
+  |   (GitHub Actions)       |      sin que nadie lo apriete. Es el "motor"
+  +--------------------------+      del sistema.
+         |
+         | si encuentra un precio bueno
+         v
+  +----------------+   +----------------+
+  |  EMAIL         |   |  WHATSAPP      |   <- Los canales de notificacion.
+  |  (SendGrid)    |   |  (Twilio)      |
+  +----------------+   +----------------+
+         |
+         v
+  [PERSONA RECIBE EL AVISO]
+
+  Ademas, el WORKER consulta a un proveedor externo para saber los precios
+  reales:
+
+  +--------------------------+
+  |  PROVEEDOR DE PRECIOS    |   <- Una empresa que tiene acceso a los
+  |  (Duffel)                |      precios reales de vuelos de las
+  +--------------------------+      aerolineas, y nos los entrega via API.
+
+--------------------------------------------------------------------------------
+5.2 VOCABULARIO BASICO (sin asumir nada)
+--------------------------------------------------------------------------------
+
+FRONTEND
+  La parte de un sistema que el usuario ve y con la que interactua
+  directamente: botones, formularios, textos, colores. En SomosRata, el
+  frontend es la pagina web hecha con Streamlit (un formulario donde
+  escribes tu ruta, fechas y precio maximo).
+
+BACKEND
+  La parte de un sistema que NO ve el usuario: la logica que procesa datos,
+  se comunica con la base de datos, aplica reglas de negocio. En SomosRata,
+  el backend esta repartido en dos piezas: el codigo que procesa el
+  formulario cuando lo envias (dentro de la misma app de Streamlit), y el
+  worker que revisa precios cada 6 horas (un programa separado).
+
+BASE DE DATOS
+  Un sistema especializado en GUARDAR informacion de forma organizada y
+  poder BUSCARLA rapido despues. Se organiza en "tablas" (como hojas de
+  Excel, con columnas fijas), y cada fila es un registro (por ejemplo, una
+  alerta especifica de un usuario especifico). SomosRata usa PostgreSQL
+  (un tipo de base de datos muy usado y confiable), a traves del servicio
+  Supabase (que te da un Postgres real, en la nube, gratis para proyectos
+  chicos, con una interfaz visual para verlo sin saber SQL).
+
+HOSTING
+  El servicio que hace que tu codigo, que hasta ahora solo corria en tu
+  computador, este disponible en internet para cualquiera, con una
+  direccion (URL) publica. SomosRata usa Streamlit Community Cloud como
+  hosting de la web (gratis, especializado en apps hechas con la libreria
+  Streamlit de Python).
+
+VARIABLES DE ENTORNO
+  Datos de configuracion (contraseñas, claves de acceso a servicios,
+  direcciones de servidores) que NO se escriben directamente dentro del
+  codigo, sino que se guardan por fuera, en un lugar seguro, y el codigo
+  los "lee" en el momento de ejecutarse. Esto es fundamental por dos
+  razones: (a) seguridad -si escribes una clave secreta directo en el
+  codigo y subes ese codigo a un repositorio, cualquiera con acceso al
+  repositorio ve la clave; (b) flexibilidad -el MISMO codigo puede
+  comportarse distinto en distintos ambientes (tu computador en modo
+  demo, versus el servidor real en modo produccion) solo cambiando estas
+  variables, sin tocar el codigo.
+  En SomosRata, hay TRES lugares distintos donde estas variables pueden
+  vivir, y esto genero mas de un bug real (ver 08_errores.txt): tu archivo
+  .env local (para cuando trabajas en tu propio computador), los "Secrets"
+  de Streamlit Cloud (para cuando corre la web publica), y los "Secrets"
+  de GitHub Actions (para cuando corre el worker/cron). Una misma variable
+  puede necesitar existir en mas de uno de estos tres lugares a la vez,
+  segun que PARTE del sistema la necesite.
+
+API (Application Programming Interface)
+  Una forma estandarizada en la que un programa le "pide cosas" a otro
+  programa, generalmente a traves de internet. Por ejemplo, cuando el
+  worker de SomosRata quiere saber el precio de un vuelo, no llama por
+  telefono a la aerolinea: le hace una peticion (un "API request") al
+  proveedor Duffel, en un formato que ambos entienden, y Duffel le responde
+  con los datos en ese mismo formato.
+
+CRON / WORKER / JOB PROGRAMADO
+  Un programa que se ejecuta automaticamente en un horario fijo, sin que
+  nadie lo dispare manualmente. "Cron" es el nombre historico (viene de
+  Unix) de este tipo de tarea programada. En SomosRata, el worker
+  (check_prices.py) esta configurado para correr cada 6 horas, usando
+  GitHub Actions como el servicio que se encarga de "despertarlo" en el
+  horario correcto.
+
+DESPLIEGUE / DEPLOY
+  El proceso de tomar tu codigo y ponerlo a correr en el hosting real,
+  para que deje de ser "algo que solo funciona en mi computador" y pase a
+  ser "algo que funciona en internet, para cualquiera". En SomosRata, el
+  despliegue de la web es automatico: cada vez que se sube un cambio a
+  GitHub, Streamlit Cloud lo detecta y actualiza la version publica solo,
+  en 1-2 minutos.
+
+REPOSITORIO / GIT / GITHUB
+  Git es una herramienta que guarda el HISTORIAL COMPLETO de cambios de tu
+  codigo: cada version anterior queda guardada, se puede volver atras, se
+  puede ver exactamente que cambio y cuando. GitHub es un servicio que
+  aloja ese historial en la nube (un "repositorio" o "repo"), y ademas
+  permite conectar ese codigo con otros servicios (como Streamlit Cloud,
+  que lee el codigo directo desde GitHub para desplegarlo).
+
+--------------------------------------------------------------------------------
+5.3 EL PATRON MAS IMPORTANTE DE TODO EL PROYECTO: EL PATRON STRATEGY
+--------------------------------------------------------------------------------
+
+Este es el patron de diseño que mas vale la pena que te lleves de este
+proyecto, porque resuelve un problema que vas a tener en CUALQUIER proyecto
+futuro: como desarrollar y probar tu sistema SIN depender de servicios
+externos reales (que cuestan dinero, requieren registro, o simplemente no
+quieres configurar todavia), pero de forma que activar la version real
+despues sea trivial.
+
+La idea, explicada simple: en vez de que tu codigo llame directamente a "el
+proveedor de precios de vuelos" o "el proveedor de emails", el codigo llama
+a una funcion GENERICA (por ejemplo, "buscar vuelos" o "mandar email"), y
+esa funcion generica decide, segun la configuracion, a QUE implementacion
+especifica delegar el trabajo real:
+
+  buscar_vuelos(ruta, fecha)
+       |
+       +--> si FLIGHT_PROVIDER = "mock"    -> genera datos falsos, gratis,
+       |                                       instantaneo, para desarrollar.
+       +--> si FLIGHT_PROVIDER = "duffel"  -> llama a la API real de Duffel.
+       +--> si FLIGHT_PROVIDER = "amadeus" -> llama a la API real de Amadeus.
+
+  Lo mismo aplica para la base de datos:
+
+  guardar_alerta(datos)
+       |
+       +--> si hay credenciales de Supabase configuradas -> guarda en
+       |                                                      Postgres real.
+       +--> si NO hay credenciales                        -> guarda en un
+                                                               archivo CSV
+                                                               local.
+
+  Y lo mismo para las notificaciones:
+
+  mandar_email(destinatario, mensaje)
+       |
+       +--> si hay API key de SendGrid  -> manda el email real.
+       +--> si NO hay API key           -> "modo dry-run": solo escribe en
+                                            el registro de actividad (log)
+                                            lo que HABRIA mandado, sin
+                                            fallar ni gastar cuota.
+
+Por que esto es tan valioso:
+
+  1. Puedes desarrollar y probar TODO el flujo del sistema sin gastar
+     dinero ni necesitar internet, usando datos simulados.
+  2. El dia que activas el servicio real, no reescribes nada: solo agregas
+     la credencial correspondiente como variable de entorno, y el mismo
+     codigo empieza a usar el servicio real automaticamente.
+  3. Si un servicio real falla temporalmente o cambia sus condiciones (como
+     paso con Amadeus en este proyecto, ver 08_errores.txt), puedes
+     agregar o cambiar de proveedor sin tocar el resto del sistema: solo
+     agregas una nueva "implementacion" de la funcion generica.
+  4. Reduce mucho el miedo a "romper todo": como el modo simulado siempre
+     esta disponible, puedes volver a el en cualquier momento para
+     depurar un problema sin arriesgar datos ni gastar cuota de un
+     servicio real.
+
+En terminos de programacion, este patron tiene un nombre formal: patron de
+diseño "Strategy". No necesitas memorizar el nombre, pero si necesitas
+recordar la IDEA: separa "que se necesita hacer" (la funcion generica) de
+"como se hace especificamente" (la implementacion concreta), y decide cual
+implementacion usar mediante configuracion externa, no mediante cambios de
+codigo.
+
+--------------------------------------------------------------------------------
+5.4 LAS CUATRO TABLAS DE LA BASE DE DATOS (EL MODELO DE DATOS)
+--------------------------------------------------------------------------------
+
+SomosRata guarda toda su informacion en 4 tablas, relacionadas entre si:
+
+  users (usuarios)
+    Quien eres: nombre, email, whatsapp, si diste tu consentimiento.
+
+  alerts (alertas)
+    Que estas buscando: origen, destino, fechas, cuantos pasajeros, tu
+    precio maximo, en que moneda, tus preferencias (vuelo directo si/no,
+    equipaje, etc.), y el ESTADO de la alerta (activa, pausada, expirada).
+    Cada alerta pertenece a un usuario (relacion 1 usuario -> muchas
+    alertas).
+
+  price_history (historico de precios)
+    Cada vez que el worker revisa una alerta, guarda AQUI el precio que
+    encontro en ese momento, aunque no haya disparado ninguna notificacion.
+    Esto permite, con el tiempo, ver un grafico de como ha variado el
+    precio de una ruta especifica. Cada fila pertenece a una alerta
+    especifica (relacion 1 alerta -> muchos registros de precio).
+
+  notifications (notificaciones)
+    Cada vez que se le avisa a alguien (por email o WhatsApp), queda un
+    registro aqui: cuando se mando, por que canal, si se logro enviar o
+    fallo, y a que precio correspondia. Esto sirve tanto para auditoria
+    (poder revisar que paso) como para la logica anti-spam (revisar cuando
+    fue la ultima vez que se notifico esta alerta, antes de notificar de
+    nuevo).
+
+Por que 4 tablas y no una sola tabla gigante con todo mezclado: porque cada
+tabla representa un CONCEPTO distinto con su propio ciclo de vida. Un
+usuario puede tener 5 alertas. Una alerta puede tener 200 registros de
+precio historico (una por cada revision del worker durante meses) pero solo
+3 notificaciones (porque el precio bueno solo aparecio 3 veces). Mezclar
+todo en una tabla haria que la informacion se repita muchisimas veces de
+forma innecesaria, y seria mucho mas dificil de consultar y mantener
+correcta. Esta forma de organizar datos relacionados en tablas separadas,
+conectadas por identificadores, se llama "modelo relacional", y es la base
+de como funciona casi cualquier sistema con una base de datos SQL como
+Postgres.
+
+--------------------------------------------------------------------------------
+5.5 LA SEPARACION ENTRE LA WEB Y EL WORKER
+--------------------------------------------------------------------------------
+
+Una decision de arquitectura central de SomosRata: la web publica (donde la
+gente crea alertas) y el worker que revisa precios y notifica, son DOS
+PROGRAMAS COMPLETAMENTE INDEPENDIENTES, que ni siquiera corren en el mismo
+lugar (la web corre en Streamlit Cloud; el worker corre en GitHub Actions).
+Lo UNICO que comparten es la base de datos: la web escribe alertas ahi, el
+worker las lee de ahi.
+
+Por que separarlos, en vez de que la web misma revise los precios cuando
+alguien la visita:
+
+  1. Revisar precios de una alerta puede tardar varios segundos (hay que
+     consultarle al proveedor externo). Si eso pasara cada vez que alguien
+     visita la pagina, la pagina se sentiria lenta.
+  2. Las alertas necesitan revisarse PERIODICAMENTE (cada 6 horas), no solo
+     cuando alguien esta mirando la pagina en ese momento -de hecho, la
+     gracia del producto es que el usuario NO tiene que estar mirando la
+     pagina para recibir su aviso.
+  3. Si el worker falla (por ejemplo, el proveedor de precios esta caido),
+     eso no debe afectar para nada que la web siga funcionando y la gente
+     pueda seguir creando alertas nuevas.
+
+Esta separacion entre "la parte que atiende al usuario en el momento" y "la
+parte que trabaja en segundo plano, en su propio horario" es un patron
+extremadamente comun en sistemas reales (se suele llamar arquitectura de
+"jobs asincronos" o "background workers"), y vale la pena replicarlo en
+cualquier proyecto futuro donde tengas una tarea que (a) tarda tiempo, o
+(b) tiene que repetirse periodicamente sin que el usuario la dispare cada
+vez.
+
+--------------------------------------------------------------------------------
+5.6 COMO SE PROTEGEN LOS SECRETOS (CREDENCIALES)
+--------------------------------------------------------------------------------
+
+Regla de oro, sin excepciones: NINGUNA clave, contraseña, o token de acceso
+se escribe directamente en el codigo que se sube a GitHub. Todo eso vive en
+variables de entorno, y los archivos que las contienen (.env en local,
+secrets.toml en Streamlit) estan explicitamente excluidos del control de
+versiones (mediante un archivo .gitignore, que le dice a Git "nunca subas
+estos archivos, aunque existan en mi carpeta").
+
+Adicionalmente, en este proyecto se tomo una decision de seguridad
+consciente al momento de compartir el link publico con usuarios reales: el
+panel de administracion (que muestra estadisticas internas del sistema) se
+protegio con una clave simple ANTES de invitar gente de afuera, porque
+hasta ese momento era accesible para cualquiera que entrara al link
+publico y navegara al panel, aunque no mostraba datos personales directos
+como emails.
+
+Leccion general: antes de compartir un link publico con extraños, revisa
+TODAS las paginas/rutas de tu sistema, no solo la principal, para confirmar
+que ninguna expone informacion que no deberia ser publica.
+
+Continua en 06_claude_code.txt.

@@ -1,0 +1,257 @@
+================================================================================
+04. PROMPT ENGINEERING (COMO HABLARLE A UNA IA PARA QUE TE SIRVA DE VERDAD)
+================================================================================
+
+--------------------------------------------------------------------------------
+4.1 LA IDEA CENTRAL
+--------------------------------------------------------------------------------
+
+"Prompt Engineering" suena tecnico, pero en el fondo es una habilidad de
+COMUNICACION, no de programacion. Es la diferencia entre pedirle algo a un
+colega nuevo que no conoce el contexto de tu proyecto, versus pedirselo a
+alguien que lleva un ano trabajando contigo. Un buen prompt le da a la IA
+el contexto que necesita para tomar buenas decisiones SIN que tengas que
+supervisar cada detalle.
+
+La calidad de lo que obtienes de una IA es directamente proporcional a la
+calidad del contexto y la claridad de la instruccion que le das. Esto no es
+una frase motivacional, es un hecho observable en esta conversacion: cada
+vez que el prompt fue vago o incompleto, la respuesta necesito una vuelta
+extra de aclaracion; cada vez que el prompt fue especifico y con contexto,
+la ejecucion fue directa y correcta a la primera.
+
+--------------------------------------------------------------------------------
+4.2 PROMPTS QUE FUNCIONARON BIEN (ejemplos reales de esta conversacion)
+--------------------------------------------------------------------------------
+
+EJEMPLO 1 - El prompt inicial que arranco todo el proyecto:
+
+  "Este es mi proyecto Flight Price Alert Web, un MVP en Streamlit + Python
+  que ya corre en local en modo demo (mock + CSV). Quiero desplegarlo como
+  web publica con link compartible para que cualquiera cree alertas desde
+  el celular. Ayudame paso a paso en este orden: (1) configurar Supabase...
+  (2) subir el repo a GitHub, (3) desplegar en Streamlit Community Cloud...
+  (4) conectar SendGrid... (5) conectar Amadeus... (6) Twilio WhatsApp al
+  final."
+
+  Por que funciono tan bien:
+    - Da el ESTADO ACTUAL exacto ("ya corre en local en modo demo").
+    - Da el OBJETIVO final claro ("web publica con link compartible").
+    - Da el ORDEN de ejecucion deseado, numerado, sin ambiguedad.
+    - No pide "hazme una app de alertas de vuelos" desde cero (lo cual
+      habria obligado a la IA a re-disenar algo que ya existia y ya estaba
+      bien pensado).
+
+EJEMPLO 2 - Pedir un plan antes de programar (usado dos veces):
+
+  "Antes de tocar codigo, muestrame el plan. Cambios que necesito: [lista
+  detallada de requisitos tecnicos y de negocio]... Despues de que apruebe
+  el plan: aplica los cambios, pruebalos en local... y ayudame a hacer
+  commit y push."
+
+  Por que funciono tan bien:
+    - Separa explicitamente DISEÑO de EJECUCION, evitando que la IA
+      empiece a escribir codigo antes de que ambos esten de acuerdo en el
+      enfoque.
+    - Incluye contexto tecnico verificado por el propio usuario de
+      antemano ("Duffel acepta codigos de CIUDAD IATA... no solo codigos de
+      aeropuerto"), lo cual evita que la IA tenga que investigar desde
+      cero, y ademas demuestra que el usuario ya penso el problema.
+    - Cierra con criterios de exito claros ("prueba que Madrid resuelva a
+      MAD y Paris a PAR").
+
+EJEMPLO 3 - Reportar un bug con datos concretos, no una sensacion vaga:
+
+  "Duda: los usuarios estan colocando valores en USD y en CLP, por ejemplo
+  uno puso MAD - SCL en 380 USD. pero hay otro que puso en CLP 500 de ARI a
+  SCL, pero seguro se equivoco. dime si los valores lo esta tomando bien el
+  buscador en precio CLP o solo deberia buscar en USD."
+
+  Por que funciono bien (aunque no sea un prompt "perfecto" en forma):
+    - Da EJEMPLOS CONCRETOS de datos reales observados, no una queja
+      abstracta como "algo esta mal con las alertas".
+    - Formula una hipotesis propia ("seguro se equivoco") sin insistir en
+      ella como si fuera un hecho, dejando espacio para que la IA
+      investigue y corrija esa hipotesis si hace falta (de hecho, la
+      investigacion revelo que habia un bug real, no solo un error de
+      usuario).
+    - Esto llevo a que la IA fuera a mirar los DATOS REALES en la base de
+      datos en vez de especular, y encontrara el problema real (comparar
+      precios en monedas distintas sin conversion).
+
+EJEMPLO 4 - Pedir verificacion en vez de confiar en la memoria:
+
+  "Verifica que cada codigo IATA sea el correcto antes de agregarlo -- si
+  dudas de alguno, avisame en vez de inventarlo."
+
+  Por que funciono bien:
+    - Instruye explicitamente el comportamiento deseado ante la
+      incertidumbre (verificar, no inventar), en vez de asumir que la IA
+      lo va a hacer por defecto.
+    - Esto es especialmente importante para datos donde un error es
+      "silencioso" (el sistema no se rompe visiblemente, simplemente deja
+      de funcionar para ese caso especifico, algo mucho mas dificil de
+      detectar despues).
+
+--------------------------------------------------------------------------------
+4.3 PROMPTS QUE NECESITARON UNA VUELTA EXTRA DE ACLARACION
+--------------------------------------------------------------------------------
+
+Vale la pena documentar tambien los casos donde la primera version del
+pedido no fue suficiente, porque ensenan igual o mas que los casos
+exitosos.
+
+CASO 1 - "Limita el formulario a EUR" y despues "no lo limites":
+  Cuando se descubrio el bug de monedas, la primera decision fue limitar el
+  formulario a mostrar solo EUR (la unica moneda que el proveedor
+  realmente soporta). Poco despues, el usuario pidio revertir esa decision
+  ("No quiero limitar a precio en euros, estan buscando vuelos de Chile,
+  por lo tanto el precio de busqueda es CLP"), porque el contexto de
+  negocio (los primeros usuarios son chilenos) no habia quedado claro en
+  el momento de tomar esa decision tecnica.
+  Leccion: una decision tecnicamente correcta puede ser incorrecta para el
+  negocio si no se conoce el contexto de QUIENES son los usuarios reales.
+  La solucion final fue un equilibrio: dejar las 3 monedas visibles en el
+  formulario (para no confundir al usuario chileno), pero con una
+  proteccion tecnica que evita notificaciones falsas cuando la moneda no
+  coincide con lo que el proveedor realmente devuelve, comunicando la
+  limitacion por fuera (mensajes a los usuarios afectados) en vez de
+  ocultarla en la interfaz.
+
+CASO 2 - El mensaje de bienvenida por WhatsApp, en varias vueltas:
+  Primero se pidio agregar una confirmacion de bienvenida por WhatsApp.
+  Despues, al notar que se veia "poco profesional", se pidio agregar el
+  logo. Despues, al notar que el email tampoco mostraba el logo aunque el
+  codigo ya lo soportaba, se investigo y se encontro que era un problema
+  de CONFIGURACION (falta de una variable de entorno en el lugar correcto),
+  no de codigo.
+  Leccion: cuando algo "no se ve como se penso", no siempre es un bug de
+  logica. Muchas veces es una variable de configuracion que existe en un
+  lugar pero falta en OTRO lugar donde tambien se necesita (ver
+  08_errores.txt, este patron se repitio TRES VECES en el proyecto).
+
+--------------------------------------------------------------------------------
+4.4 COMO PEDIR CODIGO (buenas practicas)
+--------------------------------------------------------------------------------
+
+  1. Di el ESTADO ACTUAL antes de pedir el cambio. No asumas que la IA
+     recuerda perfectamente todo el codigo de memoria; si ha pasado tiempo
+     o hay ambiguedad, es mejor referenciar el archivo o pedir que lo
+     revise primero.
+
+  2. Especifica que archivos NO deben cambiar, si eso importa. Frases como
+     "no cambies nada de la logica de Duffel" o "no toques Supabase"
+     fueron usadas repetidamente en esta conversacion, y evitaron que
+     cambios pequeños tuvieran efectos secundarios no deseados en partes
+     del sistema que ya funcionaban bien.
+
+  3. Pide que se pruebe, no solo que se escriba. "Pruebalo en local" o
+     "verifica que funcione antes de subirlo" fueron instrucciones
+     explicitas, repetidas en casi todos los pedidos de cambios de codigo
+     de esta conversacion.
+
+  4. Si el cambio es de tamaño medio/grande, pide el plan primero (ver
+     seccion 3.3 en 03_metodologia.txt).
+
+--------------------------------------------------------------------------------
+4.5 COMO PEDIR ARQUITECTURA O DECISIONES DE DISEÑO
+--------------------------------------------------------------------------------
+
+  - Da el contexto de NEGOCIO, no solo el tecnico. "Quienes son mis
+    usuarios" importa tanto como "que hace la funcion".
+  - Si hay mas de una opcion razonable, es valido pedir que la IA presente
+    las opciones con sus tradeoffs, en vez de que decida sola. En esta
+    conversacion, esto se uso mediante preguntas de eleccion multiple
+    (ver 06_claude_code.txt, la seccion sobre AskUserQuestion) en momentos
+    clave: elegir entre Trial y Pay-as-you-go en Twilio, elegir la key de
+    Supabase (anon vs service_role), decidir si limitar el formulario a
+    EUR o no.
+  - Cuando la decision tiene consecuencias que tu (el humano) puedes medir
+    mejor que la IA (por ejemplo, "cuantas personas puedo invitar sin
+    pasarme de los limites gratuitos"), pide que la IA te de los NUMEROS
+    concretos (limites de cada plan gratuito) para que TU tomes la
+    decision final con esa informacion, en vez de pedirle a la IA que
+    decida por ti un numero arbitrario.
+
+--------------------------------------------------------------------------------
+4.6 COMO PEDIR AYUDA CUANDO NO SABES POR DONDE EMPEZAR (tú, no programador)
+--------------------------------------------------------------------------------
+
+Un patron que se repitio MUCHAS veces en esta conversacion, especialmente
+al principio del proceso de configurar servicios externos (Supabase,
+SendGrid, Twilio, Duffel): el usuario no sabia navegar la interfaz de un
+servicio que nunca habia usado, y en vez de intentar adivinar, pedia guia
+paso a paso, y en varios casos, cuando algo no calzaba con lo esperado
+(por ejemplo, encontrarse con un asistente de configuracion de dominio en
+vez de la pantalla de "single sender" esperada en SendGrid), reportaba
+EXACTAMENTE que estaba viendo (a veces con una captura de pantalla), en
+vez de intentar seguir adivinando por su cuenta.
+
+Esta es una habilidad de comunicacion subestimada: reportar con precision
+lo que ves en pantalla (incluso pegando el texto exacto o una imagen) le
+da a la IA la informacion que necesita para corregir el rumbo de
+inmediato, en vez de que ambos sigan una ruta equivocada durante varios
+pasos mas.
+
+--------------------------------------------------------------------------------
+4.7 COMO DIVIDIR PROYECTOS GRANDES EN PEDIDOS MAS CHICOS
+--------------------------------------------------------------------------------
+
+El prompt inicial de este proyecto ya venia dividido en 6 pasos numerados y
+ordenados (Supabase, GitHub, Streamlit, SendGrid, Amadeus/Duffel, Twilio).
+Esto es una tecnica de division de trabajo excelente: en vez de pedir "haz
+que mi app funcione en produccion" (una sola instruccion gigante y vaga),
+se dividio en piezas independientes, cada una con un criterio de exito
+verificable por separado (¿la base de datos guarda datos? ¿el repo esta en
+GitHub? ¿el link publico carga?).
+
+Regla practica para dividir un proyecto grande: cada pieza deberia poder
+verificarse como "funciona" o "no funciona" de forma independiente, sin
+depender de que las demas piezas tambien esten terminadas. Esto permite
+avanzar en paralelo mentalmente (aunque se ejecute en orden) y detectar
+problemas temprano, en la pieza mas chica posible, en vez de al final
+cuando todo esta mezclado.
+
+--------------------------------------------------------------------------------
+4.8 COMO EVITAR RESPUESTAS MALAS O GENERICAS
+--------------------------------------------------------------------------------
+
+  - Evita preguntas abiertas sin contexto ("¿como hago un login?"). En vez
+    de eso, da el contexto completo: que framework usas, que ya existe,
+    que problema especifico tienes.
+  - Si la respuesta que recibes se siente generica o no aplica a tu caso
+    especifico, es una senal de que el prompt no tenia suficiente contexto
+    especifico. Agrega mas detalle concreto (archivos, datos reales,
+    mensajes de error exactos) y vuelve a preguntar.
+  - Cuando algo falla y no sabes por que, pega el ERROR EXACTO (el texto
+    completo, no un resumen tuyo de lo que crees que dice). En esta
+    conversacion, cada vez que se investigo un bug, el primer paso fue
+    siempre obtener el mensaje de error real y completo (de logs de
+    Twilio, de SendGrid, de GitHub Actions), no especular sobre la causa
+    sin evidencia.
+
+--------------------------------------------------------------------------------
+4.9 COMO CONVERSAR CORRECTAMENTE CON UNA IA (resumen de reglas de oro)
+--------------------------------------------------------------------------------
+
+  1. Da el estado actual antes que el pedido.
+  2. Da el objetivo final, no solo el siguiente paso.
+  3. Si hay una decision de negocio detras de una decision tecnica,
+     explicala (quienes son tus usuarios, que limites tienes).
+  4. Pide verificacion con datos/pruebas reales, no confirmacion teorica.
+  5. Reporta errores con el texto exacto, no un resumen interpretado.
+  6. Para cambios grandes, pide plan antes que ejecucion.
+  7. Para datos criticos (codigos, precios, credenciales), pide
+     verificacion explicita en vez de asumir que la memoria de la IA es
+     perfecta.
+  8. Si algo no te gusta de una decision ya tomada, dilo directamente y
+     explica el contexto que faltaba, no asumas que hay que empezar de
+     cero: usualmente se puede ajustar sobre lo ya construido.
+  9. Cuando termines una tarea grande, pide que quede documentada (ver el
+     patron de "bugs corregidos durante el beta" en la documentacion del
+     propio proyecto), para no perder el conocimiento adquirido.
+  10. No tengas miedo de pedir explicaciones ("explicame como funciona
+      esto") ademas de pedir ejecucion ("hazlo"). Entender el por que te
+      hace mejor conversador la proxima vez.
+
+Continua en 05_arquitectura.txt.

@@ -1,0 +1,316 @@
+================================================================================
+07. DESARROLLO DEL MVP: LA HISTORIA COMPLETA, CRONOLOGICA
+================================================================================
+
+Este capitulo cuenta la historia completa, en el orden en que realmente
+paso, con las decisiones, los descartes, y los cambios de rumbo. Es mas
+largo que los anteriores a proposito: es el "diario de a bordo" del
+proyecto.
+
+--------------------------------------------------------------------------------
+7.1 PUNTO DE PARTIDA (4 de julio de 2026)
+--------------------------------------------------------------------------------
+
+El proyecto ya existia como MVP funcional en modo demo: Streamlit + Python,
+corriendo en local, con un proveedor de vuelos simulado ("mock") y
+persistencia en archivos CSV. El codigo ya tenia una arquitectura pensada
+para escalar a produccion sin reescritura (ver 05_arquitectura.txt, el
+patron Strategy), lo cual fue decisivo para la velocidad de todo lo que
+vino despues.
+
+El pedido inicial fue un plan de 6 pasos, en orden explicito:
+  1. Supabase (base de datos en la nube).
+  2. GitHub (control de versiones).
+  3. Streamlit Community Cloud (hosting publico).
+  4. SendGrid (email real).
+  5. Amadeus (precios reales) -entorno test.
+  6. Twilio WhatsApp -al final.
+
+--------------------------------------------------------------------------------
+7.2 PASO 1: SUPABASE (BASE DE DATOS)
+--------------------------------------------------------------------------------
+
+Se creo el proyecto en Supabase (tier gratuito), se ejecuto el DDL (el
+codigo SQL que define las 4 tablas) desde docs/data_model.md en el SQL
+Editor de Supabase, y se configuraron las credenciales (SUPABASE_URL y
+SUPABASE_KEY) en un archivo .env local para pruebas.
+
+Decision tomada en el camino: se eligio usar la "anon key" (clave publica,
+mas simple) en vez de la "service_role key" (clave de administrador, mas
+poderosa pero mas riesgosa si se filtra), dado que en este proyecto solo el
+propio backend (nunca el navegador del usuario final) usa esa clave, lo
+cual la hace razonablemente segura incluso sin activar Row Level Security
+(un mecanismo de seguridad adicional de Postgres, mencionado como mejora
+pendiente).
+
+Primer bug real del proyecto: al intentar insertar un usuario de prueba,
+Supabase devolvia un error de "tabla no encontrada". Causa: el DDL nunca se
+habia ejecutado (se habia mencionado el paso, pero no se habia hecho
+efectivamente en el panel de Supabase). Una vez ejecutado el SQL
+correctamente, la conexion funciono al primer intento.
+
+--------------------------------------------------------------------------------
+7.3 PASO 2: GITHUB (CONTROL DE VERSIONES)
+--------------------------------------------------------------------------------
+
+El computador del usuario no tenia Git ni GitHub CLI instalados. Se
+instalaron ambos (via winget, el instalador de paquetes de Windows). Se
+configuro la identidad de Git (nombre y correo para firmar los commits), se
+inicializo el repositorio, se reviso que archivos quedarian incluidos en el
+primer commit (excluyendo credenciales y datos de configuracion local de
+herramientas), y se creo el repositorio remoto en GitHub como PRIVADO.
+
+Complicacion encontrada: el primer intento de subir el codigo fallo porque
+el repositorio incluia un archivo de flujo de trabajo de GitHub Actions
+(.github/workflows/check_prices.yml), y el token de autenticacion de
+GitHub CLI no tenia el permiso especifico necesario para crear/actualizar
+archivos de este tipo. Se resolvio ampliando los permisos del token
+(agregando el scope "workflow") y reintentando, esta vez con exito.
+
+--------------------------------------------------------------------------------
+7.4 PASO 3: STREAMLIT COMMUNITY CLOUD (DESPLIEGUE PUBLICO)
+--------------------------------------------------------------------------------
+
+Se conecto el repositorio de GitHub (privado) a Streamlit Community Cloud,
+otorgando acceso solo a ese repositorio especifico (no a todos los repos de
+la cuenta). Se configuraron los secrets de Streamlit con las credenciales
+necesarias, y se desplego la app.
+
+Primer problema: al visitar el link publico, la pagina redirigia a una
+pantalla de login en vez de mostrar el formulario. Causa: la configuracion
+de visibilidad del "app" en Streamlit Cloud estaba en modo restringido, no
+"publica y buscable". Se corrigio cambiando esa configuracion en el panel
+de Streamlit.
+
+Segundo problema, mas serio, encontrado al probar el formulario en la web
+real por primera vez: al intentar crear una alerta, aparecia el error
+"Ocurrio un problema al guardar tu alerta: invalid input syntax for type
+timestamp with time zone". Este bug se investiga en profundidad en
+08_errores.txt (es el primer bug de fondo real del proyecto, no un error de
+configuracion): el backend de CSV usaba cadenas de texto vacias ("") para
+representar "sin valor todavia" en ciertos campos (por ejemplo, la fecha en
+que se reviso una alerta por ultima vez, antes de que se revise ninguna
+vez), pero Postgres (la base de datos real) rechaza una cadena vacia para
+una columna de tipo fecha/hora: exige NULL. Se corrigio el codigo para
+convertir cadenas vacias a NULL especificamente antes de insertar en
+Supabase.
+
+Con eso corregido, se pudo verificar por primera vez el flujo completo de
+punta a punta: alguien (el propio equipo, en modo de prueba) crea una
+alerta desde el link publico, y esa alerta queda guardada correctamente en
+la base de datos real.
+
+--------------------------------------------------------------------------------
+7.5 PASO 4: SENDGRID (EMAIL REAL)
+--------------------------------------------------------------------------------
+
+Se creo la cuenta de SendGrid. Primer tropiezo de navegacion: el usuario
+entro por error al asistente de "Autenticacion de Dominio" (que requiere
+tener un dominio propio y configurar DNS, algo que no aplicaba en este
+caso), en vez de al flujo mas simple de "Single Sender" (verificar
+solamente un correo electronico, sin necesitar un dominio). Se corrigio la
+navegacion, se verifico el remitente, y se creo la API Key con permiso de
+"Mail Send".
+
+Bug encontrado al probar el primer envio real: SendGrid devolvia un error
+403 (prohibido) con el mensaje "The from address does not match a verified
+Sender Identity". Causa raiz, al investigar el valor guardado: un ERROR DE
+TIPEO en el correo remitente configurado (se habia escrito "gmial.com" en
+vez de "gmail.com"). Corregido el typo, el envio funciono de inmediato
+(codigo de respuesta 202, que significa "aceptado para envio").
+
+Con eso, se configuraron las credenciales tambien en GitHub Actions
+Secrets (porque quien manda los emails reales es el worker/cron, no la
+web), y se verifico el flujo completo disparando el worker manualmente:
+encontro la alerta activa, la comparo contra el precio simulado (en ese
+momento el proveedor de vuelos todavia era "mock"), y si corresponde,
+manda el email real.
+
+--------------------------------------------------------------------------------
+7.6 PASO 5: PRECIOS REALES -EL PIVOTE DE AMADEUS A DUFFEL
+--------------------------------------------------------------------------------
+
+Este es el capitulo mas instructivo de toda la cronologia, y se detalla
+tambien en 08_errores.txt como un caso de estudio. Al intentar registrar
+una cuenta de desarrollador en Amadeus for Developers, se encontro un
+aviso en su propio sitio: "el portal self-service para desarrolladores va
+a ser decomisionado el 17 de julio de 2026" (es decir, en pocos dias desde
+el momento de esta conversacion), y el link de registro directamente
+devolvia "Page does not exist".
+
+En vez de insistir intentando forzar un registro en un servicio que estaba
+siendo discontinuado, se tomo la decision de pivotar a un proveedor
+alternativo: Duffel, que ya tenia una implementacion preparada en el codigo
+desde antes (el patron Strategy permitio esto sin ningun cambio de
+arquitectura). Se creo la cuenta en Duffel, se genero un token de test, y
+se verifico una busqueda real: mas de 50 ofertas devueltas para una ruta de
+prueba, con aerolineas reales (Iberia, British Airways, y la propia
+aerolinea de pruebas de Duffel).
+
+Con el proveedor real conectado, se disparo el worker de nuevo, y esta vez
+encontro un precio real por encima del umbral configurado en la alerta de
+prueba, y CORRECTAMENTE decidio no notificar (a diferencia del modo mock,
+donde los precios simulados a veces caian bajo el umbral de forma
+arbitraria). Esto confirmo que la logica de negocio (comparar contra el
+umbral) funcionaba correctamente tambien con datos reales, no solo con
+datos falsos.
+
+Bonus descubierto durante este paso: ni Duffel ni Amadeus exponen un enlace
+publico de "comprar esta oferta especifica" en su API basica (ambos
+requieren completar la reserva via su propia API, no tienen un link web
+directo por oferta). Se agrego, como solucion practica, un enlace de
+referencia generado automaticamente hacia una busqueda de Google Flights
+para la misma ruta y fecha, dejando claro en el texto que es un enlace de
+"referencia" para verificar la oferta, no un link de compra directa.
+
+--------------------------------------------------------------------------------
+7.7 PASO 6: TWILIO WHATSAPP
+--------------------------------------------------------------------------------
+
+Se creo la cuenta de Twilio (plan Trial, con credito de prueba gratuito), y
+se activo el "Sandbox" de WhatsApp (un entorno de pruebas gratuito que no
+requiere aprobacion de Meta, pero que exige que cada numero destinatario
+mande un mensaje especifico -"join <palabra-clave>"- antes de poder recibir
+mensajes).
+
+Primera confusion de un tester real: alguien mando el codigo de union con
+mayuscula inicial ("Join these-garden") seguido de un segundo mensaje sin
+texto (probablemente una foto o nota de voz enviada por error), y recibio
+la respuesta automatica generica de Twilio ("Configure your Inbound URL to
+change this message"), que sono a error pero en realidad correspondia al
+segundo mensaje no reconocido, no al primero. Se investigo revisando los
+logs de mensajes de Twilio directamente (en vez de asumir), y se confirmo
+que el primer mensaje si habia sido procesado correctamente.
+
+Se verifico el flujo dual (email + WhatsApp simultaneo) disparando el
+worker con una alerta de umbral alto (para forzar que encontrara coincidencia),
+y ambos canales funcionaron.
+
+--------------------------------------------------------------------------------
+7.8 BRANDING: DE "FLIGHT PRICE ALERT WEB" A "SOMOS-RATA"
+--------------------------------------------------------------------------------
+
+Con el sistema tecnico funcionando de punta a punta, se invirtio en
+identidad de marca. El usuario proveyo el nombre, eslogan, logo (imagen) y
+paleta de colores. Se aplico en tres lugares: la web (Streamlit), el email
+(plantilla HTML con logo y datos del vuelo en tabla), y WhatsApp (texto con
+tono de marca, mas la imagen del logo adjunta).
+
+Iteraciones dentro de esta fase (vale la pena notar que ninguna se hizo
+"perfecta" a la primera):
+  - Primero se probo con el nombre "somosrata" en minusculas, despues el
+    usuario pidio separarlo visualmente en "Somos-Rata".
+  - Primero se mostraba el logo JUNTO con el texto del nombre y eslogan;
+    despues, al notar que la imagen ya contenia ese texto, se simplifico a
+    mostrar solo la imagen (mas grande), dejando el texto como respaldo
+    UNICAMENTE para cuando no hay logo configurado.
+  - Para poder mostrar el logo en emails y WhatsApp (que necesitan una URL
+    publica de internet, no un archivo local), y dado que el repositorio de
+    codigo es privado, se habilito GitHub Pages especificamente para servir
+    esa imagen de forma publica, sin hacer publico el resto del codigo.
+  - Se descubrieron y corrigieron, en esta misma fase, DOS bugs de
+    "variable de entorno que existe pero no llega a donde hace falta" (ver
+    08_errores.txt): faltaban las credenciales de Twilio y el link del
+    logo en los Secrets de Streamlit (la web nunca antes habia necesitado
+    mandar WhatsApp, asi que nunca se habian configurado ahi), y despues,
+    faltaba declarar explicitamente el link del logo en el archivo de
+    configuracion del workflow de GitHub Actions (el secret existia en el
+    repositorio, pero el archivo YAML del cron nunca lo listaba para
+    inyectarlo como variable de entorno).
+
+Antes de compartir el link ampliamente, se reviso la seguridad del sistema
+y se detecto que el panel de administracion quedaria accesible para
+cualquier visitante del link publico, sin proteccion. Se activo una
+proteccion por clave (una funcionalidad que ya estaba en el codigo, pero
+comentada/desactivada) antes de proceder a invitar gente externa.
+
+--------------------------------------------------------------------------------
+7.9 EL BETA CON USUARIOS REALES
+--------------------------------------------------------------------------------
+
+Antes de invitar gente, se analizaron los limites de los planes gratuitos
+de cada servicio usado (SendGrid: 100 emails/dia; Twilio: credito de
+prueba; Supabase: limite de almacenamiento y pausa automatica tras
+inactividad; Streamlit y GitHub Actions: sin limites relevantes a esta
+escala), concluyendo que un grupo inicial de 10 a 30 personas era
+completamente seguro sin riesgo de saturar ningun limite.
+
+Se redacto un mensaje de WhatsApp para compartir con los primeros testers,
+que fue iterando varias veces a medida que aparecian problemas reales:
+
+  - Version 1: mensaje simple con el link y una mencion del paso de "join".
+  - Version 2: se agrego la explicacion de que, si se usa WhatsApp, el
+    "join" debe hacerse ANTES de crear la alerta (no despues), porque de
+    lo contrario la confirmacion de bienvenida falla silenciosamente (por
+    la restriccion de "ventana de 24 horas" de WhatsApp Business, explicada
+    en 08_errores.txt).
+  - Version 3: se agrego la aclaracion de que, por una limitacion temporal
+    del proveedor de precios, solo la moneda EUR realmente encuentra
+    coincidencias (aunque el formulario permite elegir CLP o USD tambien,
+    por pedido explicito del propio fundador, dado que los primeros
+    usuarios eran chilenos y pensar en euros no era natural para ellos).
+
+Durante el beta se presentaron y resolvieron, EN VIVO, con usuarios reales
+esperando respuesta, varios problemas: usuarios que no recibian la
+confirmacion de WhatsApp (diagnosticados revisando los logs reales de
+Twilio, encontrando causas distintas en cada caso: algunos nunca habian
+hecho el "join"; a otros les fallo por la ventana de 24 horas vencida; a
+otros les fallo por un bug de configuracion del propio sistema), y
+confusion real de usuarios sobre si el precio maximo se debia ingresar por
+persona o por el total del grupo (aclarado revisando el codigo real de
+como se arma la busqueda, no adivinando la respuesta).
+
+--------------------------------------------------------------------------------
+7.10 LA FUNCIONALIDAD NUEVA NACIDA DEL FEEDBACK: BUSCAR POR CIUDAD
+--------------------------------------------------------------------------------
+
+El feedback mas repetido de los primeros usuarios fue: "no se el codigo
+IATA de 3 letras de mi ciudad". Esto motivo una funcionalidad nueva, que no
+estaba en el plan original de 6 pasos: permitir escribir el nombre de la
+ciudad ("Madrid", "Concepcion") y que el sistema lo traduzca
+automaticamente al codigo que el proveedor de vuelos necesita.
+
+Esta funcionalidad se construyo siguiendo el patron de "plan antes de
+codigo" (ver 03_metodologia.txt): el usuario ya habia investigado por su
+cuenta que el proveedor de datos (Duffel) acepta codigos de CIUDAD (no solo
+de aeropuerto especifico), lo cual simplificaba mucho la solucion (no hacia
+falta buscar en varios aeropuertos por separado, el proveedor ya lo hace
+solo). Se presento un plan detallado, se resolvieron 3 decisiones de diseño
+mediante preguntas de eleccion multiple (si sacar los campos del
+formulario para poder mostrar una vista previa en vivo; si el mensaje de
+aviso deberia listar aeropuertos especificos o ser generico; que tan
+detallado debia ser el mensaje de error), se aprobo el plan, y se
+implemento, con pruebas automatizadas y manuales antes de subir el cambio.
+
+Poco despues, se amplio el diccionario de ciudades a pedido del negocio
+(el fundador identifico que faltaban ciudades chilenas relevantes, como
+Concepcion). En este paso se aplico rigurosamente la instruccion de
+"verificar antes de inventar": se encontro y corrigio un codigo de
+aeropuerto propuesto por el propio fundador que estaba desactualizado
+(correspondia a un aeropuerto que ya no opera vuelos comerciales), evitando
+que ese error se colara en el sistema.
+
+--------------------------------------------------------------------------------
+7.11 RESUMEN DE LA LINEA DE TIEMPO
+--------------------------------------------------------------------------------
+
+  Dia 1 (4 jul): Punto de partida, plan de 6 pasos.
+  Dia 1-2: Supabase + GitHub + Streamlit Cloud + primer bug de produccion
+           (NULL vs cadena vacia) corregido.
+  Dia 2-3: SendGrid conectado (con bug de typo corregido), Amadeus
+           descartado y reemplazado por Duffel, Twilio WhatsApp conectado.
+  Dia 3: Branding completo (Somos-Rata), con dos bugs de configuracion de
+         secrets corregidos, y proteccion de seguridad activada antes de
+         invitar usuarios externos.
+  Dia 3-4: Beta con primeros usuarios reales, feedback en vivo, bug critico
+           de monedas descubierto y corregido, mensajes de onboarding
+           iterados varias veces.
+  Dia 4-5: Nueva funcionalidad (busqueda por ciudad) construida a partir de
+           feedback real, con proceso de plan-antes-de-codigo, y ampliacion
+           posterior del diccionario con verificacion de datos.
+
+Menos de una semana completa, de "funciona en mi computador con datos
+falsos" a "producto en produccion, con usuarios reales, con una
+funcionalidad nueva agregada en base a su feedback".
+
+Continua en 08_errores.txt (la seccion mas importante del manual).

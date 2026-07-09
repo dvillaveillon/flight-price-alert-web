@@ -1,0 +1,204 @@
+================================================================================
+10. FRAMEWORK REUTILIZABLE PARA TU PROXIMO PROYECTO
+================================================================================
+
+Este capitulo condensa todo el manual en un framework accionable. Es el
+capitulo que deberias releer cada vez que arranques un proyecto nuevo.
+
+--------------------------------------------------------------------------------
+10.1 EL FRAMEWORK EN UNA PAGINA
+--------------------------------------------------------------------------------
+
+  FASE 0: PROBLEMA
+    -> Formula el problema en una frase (QUIEN + QUE LE FALTA + QUE
+       CONSECUENCIA TIENE).
+    -> Confirma que puedes explicarlo en 5 segundos a cualquier persona.
+    -> Decide el nivel de validacion necesario (validacion debil-suficiente
+       para problemas evidentes y comunes; validacion fuerte -hablar con
+       usuarios reales antes de construir- para problemas de nicho o
+       dudosos).
+
+  FASE 1: ALCANCE DEL MVP
+    -> Lista TODO lo que se te ocurra que el producto podria tener.
+    -> Clasifica cada item: MVP (sin esto no resuelve el problema completo)
+       / Deseable (mejora pero no es esencial) / Descartado (no tiene
+       relacion directa).
+    -> Prioriza dentro del MVP: primero lo que las demas piezas necesitan
+       para funcionar, y dentro de eso, lo que reduce mas incertidumbre.
+
+  FASE 2: ARQUITECTURA MINIMA
+    -> Dibuja el mapa de piezas (frontend, backend/worker, base de datos,
+       servicios externos) antes de escribir codigo.
+    -> Diseña cada conexion a un servicio externo con el patron Strategy:
+       una funcion generica, con implementaciones intercambiables (modo
+       simulado para desarrollar gratis, modo real activado solo por
+       configuracion).
+    -> Decide el modelo de datos (que tablas/entidades, como se relacionan).
+
+  FASE 3: CONSTRUCCION EN MODO DEMO
+    -> Construye y prueba todo el flujo end-to-end con datos simulados,
+       sin gastar dinero ni depender de servicios externos todavia.
+    -> Verifica que la logica de negocio central (las reglas que hacen que
+       tu producto sea util) funcione correctamente con datos de prueba.
+
+  FASE 4: CONEXION A SERVICIOS REALES, UNO POR UNO
+    -> Ordena los servicios por dependencia (que necesita a que) y por
+       impacto (que reduce mas incertidumbre primero). Tipicamente: base
+       de datos -> control de versiones -> hosting publico -> notificacion
+       primaria (ej. email) -> fuente de datos externa clave del negocio
+       -> canales secundarios.
+    -> Para cada servicio: crea la cuenta, verifica limites del plan
+       gratuito, conecta las credenciales, PRUEBA CON UN CASO REAL (no
+       solo revises que el codigo compile), y recien entonces avanza al
+       siguiente.
+    -> Si un proveedor falla o se descontinua, no insistas: evalua
+       alternativas rapido, gracias a que tu arquitectura (Fase 2) ya
+       esta preparada para el cambio.
+
+  FASE 5: REVISION DE SEGURIDAD ANTES DE COMPARTIR
+    -> Revisa TODAS las paginas/rutas de tu sistema, no solo la principal.
+    -> Confirma que ninguna credencial esta en el codigo subido a un
+       repositorio.
+    -> Protege cualquier panel interno antes de que el link se vuelva
+       publico.
+    -> Calcula, con numeros reales de los planes gratuitos que usas,
+       cuanta gente puedes invitar sin riesgo.
+
+  FASE 6: IDENTIDAD Y COMUNICACION
+    -> Recien ahora (con el sistema tecnico funcionando de punta a punta),
+       invierte en nombre, colores, tono, logo.
+    -> Centraliza la identidad de marca en un solo lugar del codigo.
+    -> Escribe las instrucciones para tus primeros usuarios pensando en
+       alguien que no tiene NINGUN contexto previo (orden de pasos
+       explicito, sin asumir intuicion).
+
+  FASE 7: BETA CON USUARIOS REALES
+    -> Invita a un grupo chico primero (10-30 personas es un buen punto de
+       partida para la mayoria de los planes gratuitos).
+    -> Monitorea activamente: revisa los datos reales que se generan (no
+       solo esperes que te reporten problemas), revisa logs de cada
+       servicio externo cuando algo no cuadra.
+    -> Corrige errores EN VIVO, con la misma disciplina de causa raiz de
+       08_errores.txt, mientras usuarios reales estan esperando.
+
+  FASE 8: ITERAR SOBRE FEEDBACK REAL
+    -> El feedback repetido (mas de una persona reportando lo mismo,
+       independientemente) es una señal fuerte de que hay una funcionalidad
+       o correccion real que hacer.
+    -> Vuelve a la Fase 1 (alcance) para decidir si la mejora entra al
+       "MVP siguiente" o se pospone, con el mismo criterio de siempre.
+    -> Para cambios de tamano medio o grande, pide/haz un plan explicito
+       antes de ejecutar.
+
+  FASE 9: DOCUMENTAR MIENTRAS PASA, NO DESPUES
+    -> Cada bug real corregido, cada decision de arquitectura tomada,
+       anotala en el momento (en la documentacion tecnica del proyecto),
+       no la dejes para "documentar todo al final" (para entonces, ya se
+       te habra olvidado el detalle util).
+
+--------------------------------------------------------------------------------
+10.2 COMO SABER EN QUE FASE ESTAS
+--------------------------------------------------------------------------------
+
+Pregunta de diagnostico rapido, util cuando no estas seguro de que hacer a
+continuacion:
+
+  "¿Puedo, hoy mismo, mostrarle este producto a un desconocido y que lo use
+  de principio a fin, sin que yo tenga que explicarle nada por fuera de la
+  pantalla?"
+
+  - Si la respuesta es NO porque falta conectar algo tecnico (base de
+    datos, notificaciones, datos reales): estas en Fase 3-4.
+  - Si la respuesta es NO porque hay riesgos de seguridad o privacidad sin
+    resolver: estas en Fase 5.
+  - Si la respuesta es SI pero se ve poco profesional o generico: estas en
+    Fase 6.
+  - Si la respuesta es SI y ya se ve bien: estas en Fase 7, andate a
+    conseguir tus primeros usuarios reales.
+  - Si ya tienes usuarios reales usando el producto: estas en Fase 8,
+    tu trabajo ahora es escuchar y iterar.
+
+--------------------------------------------------------------------------------
+10.3 PRINCIPIOS TRANSVERSALES (APLICAN A TODAS LAS FASES)
+--------------------------------------------------------------------------------
+
+  1. MODO SIMULADO PRIMERO, MODO REAL DESPUES, MISMO CODIGO PARA AMBOS.
+     (Patron Strategy, ver 05_arquitectura.txt.)
+
+  2. NUNCA DES ALGO POR FUNCIONANDO SIN PROBARLO CON EL SISTEMA REAL.
+     (5 niveles de verificacion, ver 06_claude_code.txt.)
+
+  3. CUANDO ALGO FALLE, BUSCA LA CAUSA RAIZ, NO SOLO EL SINTOMA.
+     (Ver 08_errores.txt completo.)
+
+  4. LAS VARIABLES DE CONFIGURACION VIVEN EN VARIOS LUGARES; VERIFICALAS EN
+     TODOS LOS QUE APLICAN.
+     (Error 5 en 08_errores.txt, el patron mas repetido de todo el
+     proyecto.)
+
+  5. NUNCA COMPARES DATOS SIN VERIFICAR QUE ESTAN EN LA MISMA UNIDAD/TIPO.
+     (Error 4 en 08_errores.txt.)
+
+  6. PARA DATOS CRITICOS, VERIFICA CONTRA UNA FUENTE ANTES DE USARLOS.
+     (Error 11 en 08_errores.txt.)
+
+  7. ANTES DE COMPARTIR UN LINK PUBLICO, HAZ UNA REVISION DE SEGURIDAD
+     EXPLICITA DE TODO EL SISTEMA.
+     (Error 8 en 08_errores.txt.)
+
+  8. LA DECISION TECNICA "CORRECTA" NO SIEMPRE ES LA DECISION DE PRODUCTO
+     CORRECTA; CONOCE EL CONTEXTO DE TUS USUARIOS REALES.
+     (Error 10 en 08_errores.txt.)
+
+  9. ESCRIBE INSTRUCCIONES PARA USUARIOS PENSANDO EN ALGUIEN SIN NINGUN
+     CONTEXTO PREVIO.
+     (Error 9 en 08_errores.txt.)
+
+  10. DOCUMENTA LOS BUGS Y DECISIONES A MEDIDA QUE PASAN, NO AL FINAL.
+
+--------------------------------------------------------------------------------
+10.4 PLANTILLA DE PROMPT INICIAL PARA UN PROYECTO NUEVO
+--------------------------------------------------------------------------------
+
+Basado en el prompt real que arranco este proyecto (ver 07, seccion 7.1),
+aca tienes una plantilla reutilizable para arrancar tu proximo proyecto con
+una IA como copiloto tecnico:
+
+  "Este es mi proyecto [NOMBRE], un MVP en [TECNOLOGIA] que [ESTADO ACTUAL
+   EXACTO: que funciona hoy, en modo demo o real, en local o desplegado].
+   Quiero [OBJETIVO FINAL CLARO Y CONCRETO].
+   Ayudame paso a paso en este orden:
+     (1) [primer servicio/pieza, la que las demas dependen]
+     (2) [control de versiones, si no existe todavia]
+     (3) [hosting/despliegue publico]
+     (4) [notificacion o canal primario]
+     (5) [fuente de datos externa clave del negocio]
+     (6) [canales o mejoras secundarias]
+   Empecemos por [PRIMER PASO]: guiame para [ACCION ESPECIFICA]."
+
+--------------------------------------------------------------------------------
+10.5 SEÑALES DE ALERTA QUE INDICAN QUE TE DESVIASTE DEL FRAMEWORK
+--------------------------------------------------------------------------------
+
+  - Llevas mas de un dia sin poder mostrarle nada funcionando a nadie:
+    probablemente estas sobre-construyendo antes de validar. Vuelve a
+    Fase 1 y recorta alcance.
+
+  - Estas peleando para que un proveedor externo funcione, y ya perdiste
+    mas de una hora en eso: pregunta te si existe una alternativa mas
+    simple o mas estable, en vez de insistir a toda costa.
+
+  - Vas a compartir un link publico y no revisaste explicitamente la
+    seguridad: PARA. Haz la revision de Fase 5 primero.
+
+  - Un usuario reporto un problema y tu primer instinto es "debe haberlo
+    usado mal": revisa los DATOS reales primero. Frecuentemente hay un bug
+    real detras de lo que parece un error de usuario (ver Error 4 en
+    08_errores.txt, exactamente este caso).
+
+  - Estas por invitar a mucha gente sin haber revisado los limites de tus
+    servicios gratuitos: hazlo antes, no despues de que algo se rompa o te
+    llegue una cuenta inesperada.
+
+Continua en 11_checklist_200.txt para la version operativa, punto por
+punto, de todo este framework.

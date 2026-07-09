@@ -1,0 +1,270 @@
+================================================================================
+06. COMO TRABAJAMOS CON CLAUDE CODE
+================================================================================
+
+Esta es, como advierte el pedido original de este manual, probablemente la
+seccion mas importante para vos que vas a repetir este proceso en el
+futuro. Aca se explica la mecanica concreta de colaboracion, no solo la
+teoria.
+
+--------------------------------------------------------------------------------
+6.1 CLAUDE CHAT VS CLAUDE CODE: LA DIFERENCIA QUE HAY QUE ENTENDER BIEN
+--------------------------------------------------------------------------------
+
+CLAUDE CHAT (o cualquier IA en modo conversacion pura, como una web de
+chat): es una conversacion de ideas. La IA puede explicarte conceptos,
+ayudarte a pensar una arquitectura, escribirte un fragmento de codigo de
+ejemplo para que TU lo copies y pegues. Pero no tiene acceso directo a tu
+computador ni a tus archivos reales: todo lo que "hace" queda dentro de la
+conversacion, y sos vos quien tiene que llevarlo a la practica.
+
+CLAUDE CODE: es un asistente que corre DENTRO de tu propio entorno de
+trabajo (en este caso, conectado directamente a la carpeta del proyecto en
+tu computador), con capacidad de:
+
+  - Leer y escribir archivos reales de tu proyecto.
+  - Ejecutar comandos en tu terminal (instalar programas, correr scripts,
+    hacer consultas a bases de datos).
+  - Hacer commits y subir cambios a GitHub.
+  - Navegar y usar herramientas externas (buscar en internet para verificar
+    datos, por ejemplo).
+  - Todo esto bajo tu supervision: te avisa que va a hacer, y para acciones
+    riesgosas (borrar cosas, hacer cambios irreversibles, mandar mensajes a
+    servicios externos) te pide confirmacion antes de proceder.
+
+En esta conversacion real, Claude Code hizo TODO lo siguiente de forma
+directa, sin que el usuario tuviera que copiar y pegar codigo manualmente:
+
+  - Instalo Git y GitHub CLI en el computador del usuario (que no los
+    tenia instalados).
+  - Creo el repositorio en GitHub y subio el codigo.
+  - Escribio y modifico decenas de archivos de codigo Python.
+  - Corrio pruebas reales contra la base de datos de Supabase (crear
+    registros de prueba y despues borrarlos).
+  - Envio emails y mensajes de WhatsApp REALES de prueba, usando las
+    credenciales configuradas.
+  - Disparo manualmente el worker (el cron) desde GitHub Actions para
+    verificar su comportamiento sin esperar el horario programado.
+  - Investigo documentacion externa (Duffel, Twilio) buscando en internet
+    cuando hizo falta verificar informacion tecnica.
+  - Genero paginas web de reporte (Artifacts) para presentar informacion
+    de forma visual.
+
+REGLA PRACTICA: usa un chat de IA normal cuando estas en fase de
+EXPLORACION DE IDEAS (que arquitectura conviene, que decision de producto
+tomar, entender un concepto). Usa Claude Code (o una herramienta
+equivalente con acceso directo a tu proyecto) cuando estas en fase de
+EJECUCION (escribir codigo real, conectar servicios reales, desplegar).
+
+--------------------------------------------------------------------------------
+6.2 COMO DIVIDIR TAREAS DENTRO DE UNA SESION DE CLAUDE CODE
+--------------------------------------------------------------------------------
+
+Un patron visible constantemente en esta conversacion: cuando una tarea
+tenia varios pasos claros, Claude Code armaba una LISTA DE TAREAS (un
+"todo list") visible, y la iba marcando paso a paso a medida que avanzaba,
+en vez de intentar hacer todo de una vez sin que quede rastro del progreso.
+
+Por ejemplo, para la funcionalidad de "buscar por nombre de ciudad", la
+lista de tareas fue:
+
+  1. Crear el archivo nuevo con el diccionario de ciudades.
+  2. Actualizar el formulario web para usar el nuevo diccionario.
+  3. Probar la resolucion de ciudades con casos concretos.
+  4. Levantar la app en local y verificar visualmente.
+  5. Correr el worker completo para confirmar que nada se rompio.
+  6. Hacer commit y push.
+
+Esto tiene varias ventajas practicas:
+
+  - Vos, como humano supervisando, siempre sabes en que paso esta el
+    trabajo, sin tener que preguntar "¿como vas?".
+  - Si la sesion se interrumpe o se corta, es facil retomar exactamente
+    donde quedo, revisando que tareas ya estan marcadas como completas.
+  - Fuerza a pensar el trabajo en pasos VERIFICABLES uno por uno, en vez de
+    un bloque monolitico de "hacer todo el cambio" que solo se prueba al
+    final (cuando ya es mas dificil aislar donde esta el problema si algo
+    falla).
+
+Para tus proyectos futuros: si le pedis a la IA un cambio de tamano medio o
+grande, es razonable pedir explicitamente "hazlo paso a paso, con una lista
+de tareas, probando cada parte antes de seguir", si notas que no lo esta
+haciendo por defecto.
+
+--------------------------------------------------------------------------------
+6.3 COMO SE HICIERON LOS COMMITS (Y POR QUE IMPORTA)
+--------------------------------------------------------------------------------
+
+Un "commit" es un punto guardado en el historial de tu codigo, con un
+mensaje que explica que cambio y por que. Durante todo este proyecto, el
+patron seguido fue:
+
+  1. Hacer el cambio de codigo.
+  2. Probarlo (localmente, y a veces contra servicios reales).
+  3. Recien despues de confirmar que funciona, hacer el commit con un
+     mensaje CLARO Y ESPECIFICO de que se cambio.
+  4. Subir el commit a GitHub (git push), lo cual dispara automaticamente
+     el redespliegue de la web publica.
+
+Ejemplos reales de mensajes de commit usados en este proyecto (fijate en
+que son especificos, no genericos como "cambios" o "fix"):
+
+  "Fix critico: no notificar cuando la moneda de la oferta no coincide con
+   la de la alerta; limitar formulario a EUR"
+
+  "Fix: agregar BRAND_LOGO_URL al env del workflow (el secret existia pero
+   nunca se inyectaba)"
+
+  "Buscador por nombre de ciudad: traducir Origen/Destino a codigo IATA
+   automaticamente"
+
+Por que esto importa para vos: dentro de 6 meses, cuando algo se rompa o
+quieras entender POR QUE el codigo esta como esta, el historial de commits
+es tu memoria externa. Un mensaje especifico te ahorra tener que releer
+todo el codigo para entender la intencion detras de un cambio.
+
+Regla practica: nunca hagas commit de algo que no probaste. En este
+proyecto, la secuencia SIEMPRE fue codigo -> prueba -> commit -> push,
+nunca al reves.
+
+--------------------------------------------------------------------------------
+6.4 COMO SE REVISO EL CODIGO (VERIFICACION, NO CONFIANZA CIEGA)
+--------------------------------------------------------------------------------
+
+Un principio que se aplico de forma consistente: "el codigo compila" o "el
+codigo se ve bien" NUNCA fue considerado suficiente para dar un cambio por
+terminado. Los niveles de verificacion usados, de mas basico a mas
+riguroso, fueron:
+
+  NIVEL 1 - Sintaxis: verificar que el archivo de Python no tenga errores
+  de escritura basicos (esto es rapido y automatico, pero solo detecta
+  errores muy obvios).
+
+  NIVEL 2 - Pruebas unitarias sueltas: escribir un script chico que llame
+  a la funcion nueva con casos de ejemplo conocidos, y verificar que la
+  respuesta sea la esperada (por ejemplo: "Madrid" deberia devolver "MAD").
+
+  NIVEL 3 - Prueba end-to-end contra el sistema real: crear un dato de
+  prueba en la base de datos REAL (no simulada), verificar que se guardo
+  correctamente, y despues BORRARLO para no dejar basura de prueba
+  mezclada con datos reales.
+
+  NIVEL 4 - Prueba del flujo completo: correr el proceso completo (el
+  worker del cron) y leer el registro de actividad (logs) linea por linea
+  para confirmar que cada alerta se proceso como se esperaba.
+
+  NIVEL 5 - Confirmacion humana: para canales que le llegan directo a una
+  persona (emails, WhatsApp), pedirle explicitamente al usuario real que
+  confirme si le llego, en vez de asumir que "si el codigo no dio error,
+  entonces llego".
+
+Este ultimo nivel (NIVEL 5) fue clave para detectar el bug de
+BRAND_LOGO_URL no inyectado en el workflow (ver 08_errores.txt): el
+sistema no arrojaba ningun error, el email se enviaba "exitosamente" segun
+los logs, pero visualmente le faltaba el logo. Sin la confirmacion humana
+de "esto se ve simple, no tiene la imagen", ese bug habria quedado sin
+detectar indefinidamente, porque tecnicamente "no fallaba".
+
+--------------------------------------------------------------------------------
+6.5 COMO ITERAR SOBRE UNA FUNCIONALIDAD YA CONSTRUIDA
+--------------------------------------------------------------------------------
+
+El patron tipico de iteracion observado repetidas veces:
+
+  1. Se construye una version inicial de algo (por ejemplo, el mensaje de
+     bienvenida de WhatsApp).
+  2. Se prueba con un caso real.
+  3. El humano da feedback especifico de que no le convence ("se ve poco
+     profesional", "no incluye la imagen").
+  4. La IA ajusta la version, sin descartar lo anterior, sino modificando
+     puntualmente lo que el feedback señalo.
+  5. Se vuelve a probar con un caso real.
+  6. Se repite hasta que el resultado convence.
+
+Esto contrasta con un patron MENOS eficiente que hay que evitar: pedir "una
+version perfecta" de entrada, sin iterar. Es mucho mas rapido y efectivo
+construir una primera version simple, probarla con algo real, y refinar en
+base a lo que se observa, que intentar anticipar toda la version final sin
+haber visto nada funcionando todavia.
+
+--------------------------------------------------------------------------------
+6.6 COMO SE PIDIERON MEJORAS SIN ROMPER LO QUE YA FUNCIONABA
+--------------------------------------------------------------------------------
+
+Frases usadas repetidamente en esta conversacion, que vale la pena adoptar
+como habito:
+
+  "No cambies la logica principal ni rompas lo que ya funciona."
+  "No toques Supabase / Duffel / el cron / las credenciales."
+  "Antes de modificar: revisa la estructura del proyecto."
+
+Estas instrucciones funcionan como un "perimetro de seguridad" alrededor
+de las partes del sistema que ya estan probadas y funcionando. Le dicen a
+la IA exactamente donde SI puede innovar y donde NO debe tocar nada, lo
+cual reduce drasticamente el riesgo de que un cambio chico rompa algo
+grande que no tenia relacion aparente.
+
+Ademas, en esta conversacion, cada vez que se hizo un cambio de tamano
+medio, se termino con una verificacion explicita de que el resto del
+sistema seguia funcionando (correr el worker completo y revisar que TODAS
+las alertas, no solo la que motivo el cambio, se procesaran correctamente).
+Esta es la version practica de lo que en programacion profesional se llama
+"pruebas de regresion": confirmar que un cambio nuevo no rompio algo viejo.
+
+--------------------------------------------------------------------------------
+6.7 COMO SE MANTUVO EL PROYECTO LIMPIO
+--------------------------------------------------------------------------------
+
+Practicas observadas que mantuvieron el proyecto ordenado a lo largo de
+toda la conversacion:
+
+  - Los datos de PRUEBA creados durante el desarrollo (alertas de prueba,
+    usuarios de prueba) se borraban de la base de datos real inmediatamente
+    despues de confirmar que la prueba funciono, para no mezclarse con
+    datos reales de usuarios de verdad.
+  - Los archivos de configuracion local que no debian subirse a GitHub
+    (.env, credenciales) se verificaron explicitamente que estuvieran
+    excluidos (.gitignore) ANTES del primer commit.
+  - Cuando se encontro una carpeta de configuracion de la propia
+    herramienta de IA (.claude/) mezclada en el proyecto, se agrego al
+    .gitignore para no subirla al repositorio publico/privado del
+    proyecto, manteniendo la separacion entre "configuracion de mis
+    herramientas de trabajo" y "codigo del producto".
+  - La documentacion tecnica del proyecto (docs/deployment_guide.md) se
+    fue actualizando A MEDIDA que pasaban cosas relevantes (nuevos
+    proveedores conectados, bugs encontrados y corregidos), no se dejo
+    para "documentar todo al final". Esto genero una bitacora fiel del
+    proceso real, en vez de una reconstruccion incompleta hecha de memoria
+    despues.
+
+--------------------------------------------------------------------------------
+6.8 EL USO DE PREGUNTAS DE ELECCION MULTIPLE (AskUserQuestion)
+--------------------------------------------------------------------------------
+
+Una herramienta especifica que se uso repetidamente en esta conversacion
+merece explicacion propia, porque es un patron de interaccion muy util:
+cuando habia una decision con 2-4 opciones razonables y era el humano quien
+debia decidir (no algo que la IA pudiera resolver sola con mas
+investigacion), en vez de escribir un parrafo largo pidiendo que el usuario
+decidiera en texto libre, se presentaron las opciones de forma estructurada,
+con una breve descripcion de cada una y sus consecuencias.
+
+Ejemplos reales usados en esta conversacion:
+
+  - "¿Qué key de Supabase usamos, anon o service_role?"
+  - "¿Instalamos Git con winget, con GitHub Desktop, o ya lo tienes
+    instalado?"
+  - "¿El repositorio en GitHub debe ser publico o privado?"
+  - "¿Como seguimos con el tema de la moneda en Duffel: crear equipo nuevo
+    en CLP, o dejarlo en EUR por ahora?"
+
+Este patron de "presentar opciones concretas con sus tradeoffs, en vez de
+preguntar de forma abierta" acelera much la toma de decisiones, porque
+reduce la carga cognitiva de tener que pensar la respuesta desde cero: el
+humano solo tiene que reconocer cual opcion prefiere entre las presentadas,
+en vez de generar la respuesta de la nada. Si en el futuro trabajas con una
+IA que no ofrece este mecanismo de forma nativa, puedes replicarlo tu
+mismo: cuando tengas que preguntar algo importante, en vez de una pregunta
+abierta, ofrece 2-3 opciones concretas con sus consecuencias.
+
+Continua en 07_desarrollo_mvp_cronologico.txt.
