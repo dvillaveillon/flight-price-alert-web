@@ -199,12 +199,14 @@ def send_whatsapp_keepalive_reminders(db: Database) -> None:
                 continue  # ya se le recordo hace poco, no insistir
 
         text = (
-            f"🐭💬 Hola {(user.get('name') or '').strip() or 'de nuevo'}! Soy {BRAND_NAME}.\n\n"
-            "Tu conexion de WhatsApp con nuestro sandbox esta por vencer "
-            "(Twilio la corta cada 24 horas). Para seguir recibiendo tus "
-            "alertas aqui, manda de nuevo este mensaje al +1 415 523 8886:\n\n"
+            f"🐭💬 Hola {(user.get('name') or '').strip() or 'de nuevo'}! Soy SomosRata.\n\n"
+            "Tu conexión para seguir recibiendo alertas de viajes está por vencer.\n\n"
+            "Si quieres seguir recibiendo tus alertas, envíanos el siguiente texto "
+            "a este WhatsApp:\n\n"
             "join these-garden\n\n"
-            "Gracias por seguir con nosotros!"
+            "Este paso es necesario porque estamos en modo prueba y WhatsApp pide "
+            "reactivar la conexión cada 24 horas.\n\n"
+            "Gracias por usar SomosRata."
         )
         ok, detail = send_whatsapp(whatsapp, text)
         db.insert_notification(anchor_alert_id, "whatsapp_reminder", text,
