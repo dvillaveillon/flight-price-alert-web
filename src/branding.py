@@ -17,7 +17,9 @@ from __future__ import annotations
 
 import os
 from typing import Any
+from urllib.parse import quote
 
+from src.city_resolver import city_label_for_code
 from src.utils import get_secret
 
 BRAND_NAME = "Somos-Rata"
@@ -48,6 +50,24 @@ def get_colors() -> dict[str, str]:
     }
 
 
+def build_hotel_link(destination: str, checkin: str | None, checkout: str | None) -> str:
+    """
+    Enlace de referencia a Google Hotels para la ciudad destino de la alerta.
+
+    No es de compra directa (no hay afiliado configurado): mismo espiritu que
+    _reference_link de vuelos en flight_api.py, solo para que el usuario
+    aproveche el viaje y busque alojamiento sin salir de la notificacion.
+    """
+    ciudad = city_label_for_code(destination) if destination else ""
+    query = f"Hotels in {ciudad}" if ciudad else "Hotels"
+    url = f"https://www.google.com/travel/hotels?q={quote(query)}"
+    if checkin:
+        url += f"&checkin={checkin}"
+    if checkout:
+        url += f"&checkout={checkout}"
+    return url
+
+
 def build_whatsapp_message(alert: dict[str, Any], offer: dict[str, Any]) -> str:
     """Texto de marca para la notificacion de WhatsApp."""
     origen = alert.get("origin")
@@ -68,6 +88,11 @@ def build_whatsapp_message(alert: dict[str, Any], offer: dict[str, Any]) -> str:
     )
     if link:
         text += f"\n\nRevisa tu vuelo aqui:\n{link}"
+    if destino:
+        hotel_link = build_hotel_link(
+            destino, alert.get("departure_date"), alert.get("return_date")
+        )
+        text += f"\n\nBusca hotel en {destino} aqui:\n{hotel_link}"
     return text
 
 
@@ -125,12 +150,22 @@ def build_email_html(alert: dict[str, Any], offer: dict[str, Any],
     )
 
     button_html = (
-        '<tr><td align="center" style="padding:20px 0;">'
+        '<tr><td align="center" style="padding:20px 0 8px 0;">'
         f'<a href="{link}" target="_blank" '
         f'style="background-color:{colors["primary"]};color:#ffffff;text-decoration:none;'
         'padding:12px 28px;border-radius:6px;font-weight:600;font-size:15px;'
         'display:inline-block;">Ver vuelo</a></td></tr>'
         if link else ""
+    )
+
+    hotel_link = build_hotel_link(destino, salida, vuelta) if destino else ""
+    hotel_button_html = (
+        '<tr><td align="center" style="padding:0 0 20px 0;">'
+        f'<a href="{hotel_link}" target="_blank" '
+        f'style="color:{colors["secondary"]};text-decoration:none;border:1px solid #E5E9F0;'
+        'padding:10px 24px;border-radius:6px;font-weight:600;font-size:14px;'
+        'display:inline-block;">Buscar hotel</a></td></tr>'
+        if hotel_link else ""
     )
 
     chart_html = ""
@@ -172,6 +207,7 @@ def build_email_html(alert: dict[str, Any], offer: dict[str, Any],
           </td>
         </tr>
         {button_html}
+        {hotel_button_html}
         {chart_html}
         <tr>
           <td style="padding:16px 24px;background-color:#F8FAFC;border-top:1px solid #E5E9F0;">

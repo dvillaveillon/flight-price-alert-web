@@ -115,3 +115,20 @@ def describe_location(texto: str) -> str | None:
     if is_valid_iata(texto):
         return f"{normalize_iata(texto)} (código IATA)"
     return None
+
+
+def city_label_for_code(code: str) -> str:
+    """
+    Camino inverso: dado un codigo IATA (ej. "PAR"), devuelve un nombre de
+    ciudad legible (ej. "Paris") para usar en links de busqueda (hoteles).
+
+    Si el codigo no esta en _CITY_ALIASES (ej. aeropuerto puntual no listado),
+    devuelve el codigo tal cual: sigue siendo un query valido para Google.
+    """
+    if not code:
+        return code
+    code_norm = code.strip().upper()
+    for alias, iata in _CITY_ALIASES.items():
+        if iata == code_norm:
+            return alias.title()
+    return code_norm
