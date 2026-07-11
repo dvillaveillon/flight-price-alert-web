@@ -31,18 +31,19 @@ def _reference_link(origin: str, destination: str, departure_date: str,
     Enlace de referencia para que el usuario verifique la ruta (no es un enlace
     de compra directa: Duffel/Amadeus no exponen checkout publico por oferta).
 
-    Si hay fecha de vuelta, se incluye en el query para que Google Flights
-    arme una busqueda de ida y vuelta consistente con la alerta (sin esto,
-    Google infiere su propia fecha de regreso, que puede no coincidir).
-    Aun con las fechas correctas, el precio que Google muestre puede no
-    coincidir exactamente con el de la oferta que disparo la alerta: son
-    inventarios y tarifas en tiempo real distintos a los de Duffel/Amadeus.
+    IMPORTANTE: el "q=" de Google Flights es un parser de lenguaje natural NO
+    oficial/no documentado. Probamos agregar la fecha de vuelta con frases
+    tipo "departing X returning Y" y Google dejaba de ejecutar la busqueda por
+    completo (mostraba la landing generica, ni siquiera origen/destino
+    quedaban aplicados). La UNICA frase que confirmamos que Google parsea de
+    forma confiable es "Flights from X to Y on FECHA" (un solo clausula, una
+    sola fecha) -> por eso return_date se ignora a proposito en el query,
+    aunque se siga recibiendo como parametro (se deja documentado el intento
+    fallido para no repetir el error). Prioridad: que el link cargue una
+    busqueda real con origen/destino/fecha de ida correctos, por sobre
+    intentar forzar tambien la vuelta con un truco no verificable.
     """
-    if return_date:
-        query = (f"Flights from {origin} to {destination} "
-                  f"departing {departure_date} returning {return_date}")
-    else:
-        query = f"Flights from {origin} to {destination} on {departure_date}"
+    query = f"Flights from {origin} to {destination} on {departure_date}"
     return f"https://www.google.com/travel/flights?q={quote(query)}"
 
 
