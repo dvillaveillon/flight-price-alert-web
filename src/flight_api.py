@@ -160,8 +160,23 @@ def _search_duffel(params: dict[str, Any]) -> list[dict[str, Any]]:
             "https://api.duffel.com/air/offer_requests?return_offers=true",
             json=payload, headers=headers, timeout=30,
         )
-        resp.raise_for_status()
+        if not resp.ok:
+            # El texto de error de Duffel (ej. token invalido, ruta sin
+            # cobertura, cuenta en modo test) es la parte util para
+            # diagnosticar; sin esto solo veiamos "422 Client Error" sin
+            # saber por que.
+            logger.error(
+                "Duffel respondio %s para %s->%s el %s. Cuerpo: %s. Cayendo a mock.",
+                resp.status_code, params.get("origin"), params.get("destination"),
+                params.get("departure_date"), resp.text[:500],
+            )
+            return mock_flight_api.search_flights(params)
         offers = resp.json().get("data", {}).get("offers", [])
+        if not offers:
+            logger.warning(
+                "Duffel respondio OK pero sin ofertas para %s->%s el %s.",
+                params.get("origin"), params.get("destination"), params.get("departure_date"),
+            )
         return [_normalize_duffel(o, params) for o in offers]
     except Exception as exc:
         logger.error("Error consultando Duffel (%s). Cayendo a mock.", exc)
