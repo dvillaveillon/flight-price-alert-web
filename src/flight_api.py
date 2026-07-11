@@ -25,12 +25,24 @@ from src import mock_flight_api
 logger = get_logger(__name__)
 
 
-def _reference_link(origin: str, destination: str, departure_date: str) -> str:
+def _reference_link(origin: str, destination: str, departure_date: str,
+                     return_date: str | None = None) -> str:
     """
     Enlace de referencia para que el usuario verifique la ruta (no es un enlace
     de compra directa: Duffel/Amadeus no exponen checkout publico por oferta).
+
+    Si hay fecha de vuelta, se incluye en el query para que Google Flights
+    arme una busqueda de ida y vuelta consistente con la alerta (sin esto,
+    Google infiere su propia fecha de regreso, que puede no coincidir).
+    Aun con las fechas correctas, el precio que Google muestre puede no
+    coincidir exactamente con el de la oferta que disparo la alerta: son
+    inventarios y tarifas en tiempo real distintos a los de Duffel/Amadeus.
     """
-    query = f"Flights from {origin} to {destination} on {departure_date}"
+    if return_date:
+        query = (f"Flights from {origin} to {destination} "
+                  f"departing {departure_date} returning {return_date}")
+    else:
+        query = f"Flights from {origin} to {destination} on {departure_date}"
     return f"https://www.google.com/travel/flights?q={quote(query)}"
 
 
@@ -90,7 +102,8 @@ def _normalize_amadeus(offer: dict, params: dict[str, Any]) -> dict[str, Any]:
         "stops": max(len(outbound) - 1, 0),
         "provider": "amadeus",
         "booking_link": _reference_link(
-            params["origin"], params["destination"], str(params["departure_date"])
+            params["origin"], params["destination"], str(params["departure_date"]),
+            str(params["return_date"]) if params.get("return_date") else None,
         ),
     }
 
@@ -168,7 +181,8 @@ def _normalize_duffel(offer: dict, params: dict[str, Any]) -> dict[str, Any]:
         "stops": max(len(out_seg) - 1, 0),
         "provider": "duffel",
         "booking_link": _reference_link(
-            params["origin"], params["destination"], str(params["departure_date"])
+            params["origin"], params["destination"], str(params["departure_date"]),
+            str(params["return_date"]) if params.get("return_date") else None,
         ),
     }
 

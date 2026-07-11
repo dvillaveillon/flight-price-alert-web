@@ -21,7 +21,10 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from src.alert_rules import build_message, evaluate
-from src.branding import BRAND_NAME, build_email_html, build_whatsapp_message, get_logo_url
+from src.branding import (
+    BRAND_NAME, build_email_html, build_whatsapp_message,
+    get_destination_image_url, get_logo_url,
+)
 from src.chart_generator import generate_price_chart_png
 from src.database import Database
 from src.flight_api import get_best_offer
@@ -139,11 +142,16 @@ def process_alert(db: Database, alert: dict) -> None:
 
     # 5b) WhatsApp (opcional; requiere join al sandbox de Twilio). Se manda
     # el grafico de esta alerta como adjunto; si no hay grafico disponible,
-    # cae al logo de marca como antes.
+    # cae a una imagen referencial del destino; si tampoco hay, al logo.
     whatsapp = user.get("whatsapp")
     if whatsapp:
         whatsapp_text = build_whatsapp_message(alert, best)
-        ok, detail = send_whatsapp(whatsapp, whatsapp_text, media_url=chart_url or get_logo_url())
+        media_url = (
+            chart_url
+            or get_destination_image_url(alert.get("destination"))
+            or get_logo_url()
+        )
+        ok, detail = send_whatsapp(whatsapp, whatsapp_text, media_url=media_url)
         db.insert_notification(
             alert_id, "whatsapp", whatsapp_text,
             "sent" if ok else "failed", decision.price,

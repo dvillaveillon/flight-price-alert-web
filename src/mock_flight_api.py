@@ -42,12 +42,18 @@ def search_flights(params: dict[str, Any]) -> list[dict[str, Any]]:
       price, currency, airline, departure_time, return_time, stops,
       provider, booking_link
     """
+    from src.flight_api import _reference_link  # import perezoso: evita ciclo con flight_api
+
     rng = random.Random(_seed_from_params(params))
 
     origin = params.get("origin", "SCL")
     destination = params.get("destination", "MAD")
     currency = params.get("currency", "USD")
     direct_only = params.get("direct_only", False)
+    booking_link = _reference_link(
+        origin, destination, str(params.get("departure_date", "")),
+        str(params["return_date"]) if params.get("return_date") else None,
+    )
 
     # Precio base sintetico influido por la "distancia" (diferencia de letras IATA).
     base = 250 + (abs(hash(origin) - hash(destination)) % 700)
@@ -70,7 +76,7 @@ def search_flights(params: dict[str, Any]) -> list[dict[str, Any]]:
                             if params.get("return_date") else ""),
             "stops": stops,
             "provider": "mock",
-            "booking_link": f"https://example.com/book?o={origin}&d={destination}",
+            "booking_link": booking_link,
         })
 
     # Ordenadas de mas barata a mas cara: la primera es la "mejor oferta".

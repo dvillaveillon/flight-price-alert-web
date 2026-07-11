@@ -74,6 +74,10 @@ _CITY_ALIASES: dict[str, str] = {
     "rio de janeiro": "RIO",
     "rio": "RIO",
     "brasilia": "BSB",
+
+    # --- Destinos turisticos de playa ---
+    "punta cana": "PUJ",
+    "cancun": "CUN",
 }
 
 
